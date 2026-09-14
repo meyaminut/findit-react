@@ -1,0 +1,32 @@
+:root {
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bg-top-bar: #162447;
+  --primary-orange: #f59e0b;
+  --primary-orange-hover: #d97706;
+  --text-dark: #111827;
+  --text-muted: #6b7280;
+  --text-label: #1f2937;
+  --input-bg: #f3f4f6;
+  --input-border: #e5e7eb;
+  --input-focus-border: #3b82f6;
+  --card-bg: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
