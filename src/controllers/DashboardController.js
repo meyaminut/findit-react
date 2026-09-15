@@ -2,41 +2,38 @@ import { DashboardModel } from '../models/DashboardModel';
 
 /**
  * Controller: DashboardController
- * Handles operational queue triage, match approvals, dismissals, and incident dispatching.
+ * Handles operational queue triage, match approvals, dismissals, and incident dispatching
+ * for Grand Melia Jakarta Lost & Found operations console.
  */
 export class DashboardController {
   static getMetrics() {
     return DashboardModel.getKpiMetrics();
   }
 
-  static getQueueItems() {
-    return DashboardModel.getInitialQueueItems();
+  static getTickets() {
+    return DashboardModel.getActionableTickets();
   }
 
-  static getDiagnostics() {
-    return DashboardModel.getSystemDiagnostic();
+  static getActivities() {
+    return DashboardModel.getLiveActivities();
   }
 
-  /**
-   * Approve a matched lost & found pairing
-   */
-  static async approveMatch(matchId, handoverMethod = 'Airport Security Dispatch Desk') {
-    // In production, performs SQL UPDATE `matches` SET status='approved', handover_method=...
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return {
-      success: true,
-      message: `Match #${matchId} verified & approved. Contact details shared with both parties.`
-    };
+  static getCategories() {
+    return DashboardModel.getCategories();
+  }
+
+  static getUnlabeledItems() {
+    return DashboardModel.getUnlabeledStorageItems();
   }
 
   /**
-   * Reject an auto-paired recommendation
+   * Verify and match an actionable ticket
    */
-  static async rejectMatch(matchId, reason = 'Unmatched physical characteristics') {
+  static async verifyTicketMatch(ticketId) {
     await new Promise((resolve) => setTimeout(resolve, 500));
     return {
       success: true,
-      message: `Match #${matchId} unlinked. Item returned to open search queue.`
+      message: `Tiket ${ticketId} berhasil diverifikasi dan diteruskan ke tahap pencocokan.`
     };
   }
 
@@ -44,16 +41,25 @@ export class DashboardController {
    * Create and persist a new Lost or Found incident report
    */
   static async createIncident(incidentData) {
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    const newIdentifier = incidentData.type === 'lost' 
-      ? `R-${Math.floor(1000 + Math.random() * 9000)}`
-      : `F-${Math.floor(1000 + Math.random() * 9000)}`;
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const newId = `#TK-2024-${randomNum}`;
 
     return {
       success: true,
-      identifier: newIdentifier,
-      data: incidentData,
-      message: `Incident #${newIdentifier} registered and submitted for AI matching.`
+      identifier: newId,
+      message: `Laporan cepat ${newId} berhasil dibuat dan diarsipkan di Grand Melia FO.`
+    };
+  }
+
+  /**
+   * Export operational recap report
+   */
+  static async exportRecapReport() {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return {
+      success: true,
+      message: 'Rekap Operasional Lost & Found (Shift Pagi) berhasil diekspor ke PDF/Excel.'
     };
   }
 }

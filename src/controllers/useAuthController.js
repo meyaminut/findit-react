@@ -6,10 +6,10 @@ import { AuthController } from './AuthController';
  * Exposes reactive controller state and action dispatchers to React Views
  */
 export function useAuthController() {
-  const [email, setEmail] = useState('admin@findit.internal');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('nama.user@grandmelia.co.id');
+  const [password, setPassword] = useState('••••••••');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberSession, setRememberSession] = useState(false);
+  const [rememberSession, setRememberSession] = useState(true);
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);

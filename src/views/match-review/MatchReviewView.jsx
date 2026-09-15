@@ -1,171 +1,194 @@
-import React from 'react';
-import { Sparkles, SlidersHorizontal, Search } from 'lucide-react';
-import useMatchReviewController from '../../controllers/useMatchReviewController';
+import React, { useState, useEffect } from 'react';
+import { ArrowRightLeft, Sparkles, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
-import QueueSidebar from './components/QueueSidebar';
-import ComparisonDetail from './components/ComparisonDetail';
-import CorrelationBreakdown from './components/CorrelationBreakdown';
-import MatchActionBar from './components/MatchActionBar';
+import MatchReviewHeader from './components/MatchReviewHeader';
+import GuestClaimDetailCard from './components/GuestClaimDetailCard';
+import HousekeepingCandidatesCard from './components/HousekeepingCandidatesCard';
+import MatchReviewFooter from './components/MatchReviewFooter';
+import { StorageService } from '../../services/StorageService';
 import './MatchReviewView.css';
 
 /**
- * View Component: MatchReviewView ("Algorithmic Correlation Pipeline")
- * Strict MVC View layer rendering the AI candidate comparison and verification workspace.
+ * View Component: MatchReviewView (7. Verifikasi & Pencocokan / Match Review)
+ * Modularized clean MVC View for Front Office verification.
+ * Backed by StorageService for state persistence.
  */
-export function MatchReviewView({ activeNav = 'Match Review', onNavChange, onLogout }) {
-  const {
-    candidates,
-    totalCount,
-    activeCandidate,
-    selectedId,
-    activeFilterTab,
-    setActiveFilterTab,
-    confidenceThreshold,
-    setConfidenceThreshold,
-    searchFilter,
-    setSearchFilter,
-    isLoading,
-    toastMessage,
-    handleSelectCandidate,
-    handleConfirmMatch,
-    handleRejectMatch,
-    handleFlagInspection
-  } = useMatchReviewController();
+export function MatchReviewView({ 
+  activeNav = 'Verifikasi & Pencocokan', 
+  onNavChange, 
+  onLogout,
+  onProceedToHandover 
+}) {
+  const [tickets, setTickets] = useState(() => StorageService.getTickets());
+  const [foundItems, setFoundItems] = useState(() => StorageService.getFoundItems());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roomFilter, setRoomFilter] = useState('');
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [zoomedPhotoUrl, setZoomedPhotoUrl] = useState(null);
+  const [toastNotification, setToastNotification] = useState(null);
+
+  const [verifiedPoints, setVerifiedPoints] = useState({
+    category: true,
+    model: true,
+    color: true,
+    location: true,
+    secret: true
+  });
+
+  // Pick first pending ticket or fallback
+  const activeTicket = tickets.find(t => t.status === 'Menunggu Verifikasi') || tickets[0] || {
+    id: '#TK-2024-0314',
+    guestName: 'Hendra Gunawan',
+    roomNumber: 'Kamar 314',
+    itemName: 'Garmin Venu SQ (Tali Karet Hitam)',
+    category: 'Elektronik • Smartwatch',
+    color: 'Hitam Matte',
+    locationLost: 'Meja Nakas Kanan Kamar 314',
+    secretDetail: 'Ada goresan halus sudut kiri atas, wallpaper foto anjing golden retriever.',
+    phone: '+62 812-3456-7890',
+    email: 'hendra.gunawan@email.com',
+    status: 'Menunggu Verifikasi',
+    reportedAt: '14 Mar 2024, 10:50 WIB'
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToastNotification({ message, type });
+    setTimeout(() => setToastNotification(null), 3500);
+  };
+
+  const handleVerifyToggle = (key) => {
+    setVerifiedPoints(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleMarkVerified = () => {
+    if (activeTicket?.id) {
+      StorageService.updateTicketStatus(activeTicket.id, 'Terverifikasi');
+    }
+    showToast(`Tiket ${activeTicket.id} berhasil diverifikasi! Mengalihkan ke Proses Handover...`);
+    setTimeout(() => {
+      if (onProceedToHandover) {
+        onProceedToHandover();
+      } else if (onNavChange) {
+        onNavChange('Handover');
+      }
+    }, 800);
+  };
+
+  const handleRejectRelation = () => {
+    showToast('Relasi barang dilepas. Kandidat dikembalikan ke antrean temuan.', 'warning');
+  };
+
+  const handlePostpone = () => {
+    showToast('Status diperbarui: Menunda dan meminta bukti tambahan ke tamu.', 'info');
+  };
 
   return (
-    <div className="dashboard-layout-container">
-      {/* 1. Left Sidebar Navigation (Logo ONLY, No "Find!t Admin" text) */}
+    <div className="match-review-app-layout">
+      {/* 1. Left Sidebar Navigation */}
       <Sidebar
         activeNav={activeNav}
         onNavChange={onNavChange}
         onLogout={onLogout}
       />
 
-      {/* 2. Main Dashboard Area */}
-      <div className="dashboard-main-area">
-        {/* Global Top Navbar */}
+      {/* 2. Main Viewport Container */}
+      <div className="match-review-viewport">
         <TopNavbar
-          searchQuery=""
-          onSearchChange={() => {}}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
-        {/* Match Review Workspace Body */}
-        <main className="match-review-workspace">
-          {/* Pipeline Header */}
-          <div className="pipeline-header">
-            <div className="pipeline-left-col">
-              <div className="pipeline-eyebrow">
-                <Sparkles size={14} className="pipeline-eyebrow-icon" />
-                <span>ALGORITHMIC CORRELATION PIPELINE</span>
+        {/* Scrollable Main Workspace */}
+        <main className="match-review-content">
+          <MatchReviewHeader
+            ticket={activeTicket}
+            onProtocolClick={() => showToast('Protokol SOP FO Double-Blind Check Aktif: Data klaim tersandi terlindungi.', 'info')}
+          />
+
+          {/* Active Mode Banner */}
+          <div className="matching-mode-banner">
+            <div className="banner-left-content">
+              <div className="banner-mode-icon-box">
+                <ArrowRightLeft size={18} className="banner-mode-icon" />
               </div>
-              <h1 className="pipeline-title">Match Review</h1>
-              <p className="pipeline-subtitle">
-                Verify AI-suggested correlation between lost and found item reports.
-              </p>
+              <div className="banner-text-group">
+                <h2 className="banner-mode-title">Mode Pencocokan Aktif</h2>
+                <p className="banner-mode-desc">
+                  Bandingkan klaim rahasia tamu dengan data fisik barang temuan housekeeping. Hindari membacakan ciri khusus ke tamu terlebih dahulu.
+                </p>
+              </div>
             </div>
 
-            <div className="pipeline-status-col">
-              <div className="pipeline-live-pill">
-                <span className="live-dot-orange"></span>
-                <span>Auto-Processing Active</span>
-              </div>
-              <span className="latency-metric">
-                Engine latency: <strong>142ms</strong>
-              </span>
+            <div className="banner-ai-pill">
+              <Sparkles size={14} className="banner-sparkle-icon" />
+              <span>Pencocokan Ciri Khusus: Sinkronisasi 98%</span>
             </div>
           </div>
 
-          {/* Filter Toolbar */}
-          <div className="pipeline-filter-bar">
-            {/* Filter Tabs */}
-            <div className="filter-tabs-left">
-              <button
-                type="button"
-                className={`review-tab-btn ${activeFilterTab === 'unreviewed' ? 'active' : ''}`}
-                onClick={() => setActiveFilterTab('unreviewed')}
-              >
-                <span>Unreviewed</span>
-                <span className="review-count-badge">5</span>
-              </button>
-
-              <button
-                type="button"
-                className={`review-tab-btn ${activeFilterTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveFilterTab('all')}
-              >
-                <span>All Matches</span>
-                <span className="review-count-badge gray">34</span>
-              </button>
-
-              <button
-                type="button"
-                className={`review-tab-btn ${activeFilterTab === 'confirmed' ? 'active' : ''}`}
-                onClick={() => setActiveFilterTab('confirmed')}
-              >
-                <span>Confirmed</span>
-              </button>
-            </div>
-
-            {/* Filter Dropdown & Search Controls */}
-            <div className="filter-controls-right">
-              <select
-                className="filter-confidence-select"
-                value={confidenceThreshold}
-                onChange={(e) => setConfidenceThreshold(e.target.value)}
-              >
-                <option value="80">Score &gt; 80% (High Confidence)</option>
-                <option value="all">All Confidence Levels</option>
-              </select>
-
-              <div className="queue-search-box">
-                <Search size={15} color="#94a3b8" />
-                <input
-                  type="text"
-                  placeholder="Filter queue items..."
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                />
-              </div>
-
-              <button type="button" className="filter-tune-icon-btn" title="Filter tuning">
-                <SlidersHorizontal size={15} />
-              </button>
-            </div>
-          </div>
-
-          {/* Main 2-Column Split Workspace */}
-          <div className="match-review-2col-layout">
-            {/* Left Column: Review Queue List */}
-            <QueueSidebar
-              candidates={candidates}
-              selectedId={selectedId}
-              onSelectCandidate={handleSelectCandidate}
+          {/* 2-Column Side-by-Side Comparison Workspace */}
+          <div className="comparison-2col-grid">
+            <GuestClaimDetailCard
+              ticket={activeTicket}
+              verifiedPoints={verifiedPoints}
+              onVerifyToggle={handleVerifyToggle}
             />
 
-            {/* Right Column: Comparative Inspection & AI Telemetry */}
-            <div className="review-detail-column">
-              <ComparisonDetail candidate={activeCandidate} />
-
-              <CorrelationBreakdown aiBreakdown={activeCandidate?.aiBreakdown} />
-
-              <MatchActionBar
-                onFlag={handleFlagInspection}
-                onReject={handleRejectMatch}
-                onConfirm={handleConfirmMatch}
-                isLoading={isLoading}
-              />
-            </div>
+            <HousekeepingCandidatesCard
+              roomFilter={roomFilter}
+              onRoomFilterChange={setRoomFilter}
+              candidates={foundItems}
+              selectedCandidate={selectedCandidate}
+              onSelectCandidate={setSelectedCandidate}
+              onZoomPhoto={(url) => setZoomedPhotoUrl(url)}
+            />
           </div>
         </main>
+
+        {/* 3. Sticky Bottom Operational Action Bar */}
+        <MatchReviewFooter
+          onRejectRelation={handleRejectRelation}
+          onPostpone={handlePostpone}
+          onMarkVerified={handleMarkVerified}
+          verifiedCount={Object.values(verifiedPoints).filter(Boolean).length}
+        />
       </div>
 
-      {/* Interactive Toast Notifications */}
-      {toastMessage && (
-        <div className="dashboard-toast-container">
-          <div className="dashboard-toast">
-            {toastMessage.message}
+      {/* Modal: Zoom Photo Preview */}
+      {zoomedPhotoUrl && (
+        <div className="photo-zoom-modal-backdrop" onClick={() => setZoomedPhotoUrl(null)}>
+          <div className="photo-zoom-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="zoom-modal-header">
+              <span>Foto Temuan Fisik Petugas HK</span>
+              <button 
+                type="button" 
+                className="zoom-modal-close"
+                onClick={() => setZoomedPhotoUrl(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <img 
+              src={zoomedPhotoUrl} 
+              alt="Detail Barang Temuan" 
+              className="zoomed-modal-img"
+            />
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastNotification && (
+        <div className={`operational-toast-pill ${toastNotification.type}`}>
+          {toastNotification.type === 'warning' ? (
+            <AlertTriangle size={16} />
+          ) : (
+            <CheckCircle2 size={16} />
+          )}
+          <span>{toastNotification.message}</span>
         </div>
       )}
     </div>

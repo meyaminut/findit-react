@@ -1,15 +1,50 @@
 :root {
   --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --bg-top-bar: #162447;
-  --primary-orange: #f59e0b;
-  --primary-orange-hover: #d97706;
-  --text-dark: #111827;
-  --text-muted: #6b7280;
-  --text-label: #1f2937;
-  --input-bg: #f3f4f6;
-  --input-border: #e5e7eb;
-  --input-focus-border: #3b82f6;
-  --card-bg: #ffffff;
+  
+  /* Benchmark Clean Palette */
+  --bg-app: #F8FAFC;                /* Ultra-clean off-white background */
+  --surface-card: #FFFFFF;          /* Pure white card surface */
+  --border-clean: #E2E8F0;          /* Crisp 1px border */
+  --border-subtle: #F1F5F9;         /* Very subtle table row divider */
+  
+  --text-heading: #0F172A;          /* High-contrast slate heading */
+  --text-body: #334155;             /* Body text */
+  --text-muted: #64748B;            /* Slate muted labels */
+  --text-dim: #94A3B8;              /* Placeholder / subtle icons */
+  
+  /* Signature Brand Accents */
+  --navy-primary: #00164E;          /* Signature deep midnight navy */
+  --navy-deep: #0A1945;             /* Deep navy base */
+  --navy-card: #0C1D49;             /* Dark sidebar background */
+  --navy-banner: #F1F4F9;           /* Protocol banner light surface */
+  
+  --amber-gold: #FEA619;            /* Brand primary action gold / alert dot */
+  --amber-gold-hover: #E89510;
+  
+  /* Status Colors */
+  --green-success: #10B981;
+  --green-bg: #ECFDF5;
+  --red-danger: #EF4444;
+  --red-bg: #FEF2F2;
+  --amber-bg: #FEF7EC;
+  --blue-soft-bg: #EFF4FB;
+
+  /* Legacy aliases for backward compatibility */
+  --color-navy-darkest: var(--navy-primary);
+  --color-navy-deep: var(--navy-deep);
+  --color-navy-card: var(--navy-card);
+  --color-amber-gold: var(--amber-gold);
+  --color-amber-gold-hover: var(--amber-gold-hover);
+  --color-text-primary: var(--text-heading);
+  --color-text-secondary: var(--text-muted);
+  --color-border: var(--border-clean);
+  --color-surface-bg: var(--bg-app);
+  --color-surface-card: var(--surface-card);
+  --bg-top-bar: var(--navy-primary);
+  --primary-orange: var(--amber-gold);
+  --primary-orange-hover: var(--amber-gold-hover);
+  --text-dark: var(--text-heading);
+  --card-bg: var(--surface-card);
 }
 
 * {
@@ -22,6 +57,8 @@ html, body {
   width: 100%;
   min-height: 100vh;
   font-family: var(--font-main);
+  background-color: var(--bg-app);
+  color: var(--text-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -29,4 +66,25 @@ html, body {
 #root {
   width: 100%;
   min-height: 100vh;
+  background-color: var(--bg-app);
 }
+
+/* Global Clean Component Utilities */
+.clean-protocol-callout {
+  background-color: var(--navy-banner);
+  border-left: 4px solid var(--navy-primary);
+  border-radius: 8px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.clean-white-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border-clean);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+

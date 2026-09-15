@@ -1,0 +1,600 @@
+/* =========================================================
+   All Reports View Stylesheet
+   MVC View Layer - findit-web
+   ========================================================= */
+
+.all-reports-workspace {
+  padding: 24px 32px 48px;
+  background-color: #f1f4f9;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* =========================================================
+   1. KPI Metrics Grid (4 Cards)
+   ========================================================= */
+.reports-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.report-kpi-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.report-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.report-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.report-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+
+.report-kpi-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-kpi-icon-box.blue {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.report-kpi-icon-box.gray {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.report-kpi-icon-box.orange {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.report-kpi-icon-box.green {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+
+.report-kpi-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.report-kpi-subtext {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.report-kpi-subtext.positive {
+  color: #16a34a;
+}
+
+.report-kpi-subtext.neutral {
+  color: #64748b;
+}
+
+.report-kpi-subtext.warning {
+  color: #d97706;
+}
+
+.report-kpi-subtext.success {
+  color: #2563eb;
+}
+
+.kpi-subtext-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.kpi-subtext-dot.gray {
+  background-color: #94a3b8;
+}
+
+.kpi-subtext-dot.orange {
+  background-color: #f59e0b;
+}
+
+.kpi-subtext-dot.blue {
+  background-color: #2563eb;
+}
+
+/* =========================================================
+   2. Main Reports Table Container
+   ========================================================= */
+.reports-table-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.reports-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.reports-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reports-main-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.reports-total-pill {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: #1e293b;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-export-csv:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* Filter Toolbar */
+.reports-filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.reports-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.reports-search-icon {
+  color: #94a3b8;
+  margin-right: 8px;
+}
+
+.reports-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13px;
+  color: #0f172a;
+  width: 100%;
+}
+
+.reports-filter-dropdowns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reports-select-pill {
+  appearance: none;
+  background-color: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 32px 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  outline: none;
+}
+
+.select-chevron {
+  position: absolute;
+  right: 10px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.date-range-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.date-icon {
+  color: #64748b;
+}
+
+/* =========================================================
+   3. Data Table Styling
+   ========================================================= */
+.reports-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.reports-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.reports-data-table th {
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.report-table-row {
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.report-table-row:hover {
+  background-color: #f8fafc;
+}
+
+.report-table-row td {
+  padding: 14px;
+  vertical-align: middle;
+}
+
+/* Column 1: Thumbnail & Ref */
+.col-item-ref {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-thumbnail-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.item-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-table-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.item-table-id {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Column 2: Type Pill */
+.report-type-pill {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.4px;
+}
+
+.report-type-pill.lost {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.report-type-pill.found {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+/* Column 3: Category */
+.category-text {
+  font-size: 12.5px;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Column 4: Reporter */
+.reporter-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.reporter-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.reporter-badge-sub {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.reporter-badge-icon.verified {
+  color: #d97706;
+}
+
+.reporter-badge-icon.staff {
+  color: #2563eb;
+}
+
+.reporter-badge-icon.officer {
+  color: #1d4ed8;
+}
+
+/* Column 5: Location & Timestamp */
+.location-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.location-main {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.location-time {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* Column 6: Status */
+.report-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.report-status-pill.new {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.report-status-pill.matched {
+  background-color: #1e3a8a;
+  color: #ffffff;
+}
+
+.report-status-pill.confirmed {
+  background-color: #f59e0b;
+  color: #ffffff;
+}
+
+.report-status-pill.returned {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.status-dot-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* =========================================================
+   4. Pagination Bar
+   ========================================================= */
+.reports-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #64748b;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.pagination-rows-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rows-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.rows-btn.active {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.pagination-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-nav-arrow {
+  background: none;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.page-nav-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-nav-num.active {
+  background-color: #0f2766;
+  color: #ffffff;
+  border-color: #0f2766;
+}
+
+.page-nav-dots {
+  color: #94a3b8;
+  padding: 0 4px;
+}
+
+/* Modal details */
+.report-modal-detail {
+  max-width: 480px;
+}
+
+.modal-detail-photo {
+  width: 100%;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 16px 0;
+  background-color: #e2e8f0;
+}
+
+.modal-detail-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.modal-spec-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.spec-val {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+@media (max-width: 1024px) {
+  .reports-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

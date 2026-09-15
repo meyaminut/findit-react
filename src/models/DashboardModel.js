@@ -1,134 +1,208 @@
-import { ReportModel } from './ReportModel';
-import { MatchModel } from './MatchModel';
-import { UserModel } from './UserModel';
-
 /**
  * Model: DashboardModel
- * Represents operational dashboard telemetry, metrics, and queue pairings
- * backed by database `u278523899_findit`.
+ * Represents operational dashboard telemetry, actionable tickets, live activities,
+ * category distribution, and storage items backed by database `u278523899_findit`.
  */
 export class DashboardModel {
   static getKpiMetrics() {
     return {
-      totalReports: {
-        value: '1,428',
-        label: 'TOTAL REPORTS',
-        subtitle: 'All time submitted records',
-        changeText: '+12% vs past month',
-        changeType: 'positive'
+      totalFound: {
+        value: 148,
+        unit: 'Item',
+        label: 'Total Barang Temuan (Bulan Ini)',
+        trendText: '+12% vs bln lalu',
+        trendType: 'positive'
       },
-      pendingMatches: {
-        value: 18,
-        label: 'PENDING MATCHES',
-        badge: 'Action Required',
-        subtitle: 'Awaiting administrative verification',
-        escalationText: '+5 escalated today',
-        isCritical: true
+      pendingVerification: {
+        value: 14,
+        unit: 'Tiket',
+        label: 'Tiket Menunggu Verifikasi',
+        badge: 'Butuh Tindakan Segera',
+        alertText: '5 tiket > 24 jam',
+        isHighlighted: true
       },
-      confirmedMonth: {
-        value: 86,
-        label: 'CONFIRMED THIS MONTH',
-        subtitle: 'High-confidence matches approved',
-        changeText: '+18% vs baseline period',
-        changeType: 'positive'
+      verifiedMonth: {
+        value: 96,
+        unit: 'Item',
+        label: 'Terverifikasi Bulan Ini',
+        statusText: 'Terkonfirmasi Valid'
       },
-      returnedOwners: {
-        value: 64,
-        label: 'RETURNED TO OWNERS',
-        subtitle: 'Custody handoffs finished',
-        efficiencyText: '88.4% resolution efficiency'
+      resolvedHandover: {
+        value: 79,
+        unit: 'Dikembalikan',
+        label: 'Resolved / Selesai Handover',
+        successRate: '82.3% Rate Sukses',
+        targetText: 'Target: 80%'
       }
     };
   }
 
-  static getInitialQueueItems() {
+  static getActionableTickets() {
     return [
       {
-        id: 'M-4091',
-        type: 'match',
-        tag: 'Auto-Paired',
-        tagType: 'navy',
-        category: 'Electronics',
-        icon: 'smartphone',
-        location: 'Terminal 3 Gate 42',
-        title: 'iPhone 15 Pro Max (Titanium Blue)',
-        counterpartTitle: 'Found: iPhone Clean Screen, Black Ringke Case',
-        confidenceScore: 94,
-        dateReported: 'Today, 10:15 AM',
-        lostReportId: 1042,
-        foundReportId: 2011,
-        owner: 'David K.',
-        finder: 'Terminal Custodian Staff'
+        id: '#TK-2024-0314',
+        ticketNumber: 'TK-2024-0314',
+        guestName: 'Ny. Sarah Jenkins',
+        isVip: true,
+        room: 'Kamar 502 (Deluxe Suite)',
+        itemTitle: 'Smartwatch Garmin Hitam',
+        category: 'electronics',
+        iconType: 'watch',
+        locationDetail: 'Area Meja Rias / Samping Kasur',
+        reportTime: 'Hari ini, 08:20',
+        status: 'Menunggu Verifikasi',
+        statusType: 'blue',
+        priorityTag: null
       },
       {
-        id: 'M-4088',
-        type: 'match',
-        tag: 'Matched',
-        tagType: 'navy',
-        category: 'Personal Item',
-        icon: 'wallet',
-        location: 'Departures Food Court',
-        title: 'Leather Bellroy Wallet (Caramel)',
-        counterpartTitle: 'Found: Brown Leather Wallet with ID cards',
-        confidenceScore: 88,
-        dateReported: 'Today, 09:30 AM',
-        lostReportId: 1039,
-        foundReportId: 2008,
-        owner: 'Siti Rahma',
-        finder: 'Cafe Barista'
+        id: '#TK-2024-0312',
+        ticketNumber: 'TK-2024-0312',
+        guestName: 'Bpk. Hendra Gunawan',
+        isVip: false,
+        room: 'Kamar 314 (Superior)',
+        itemTitle: 'Passport & Dompet Kulit',
+        category: 'documents',
+        iconType: 'wallet',
+        locationDetail: 'Kamar Mandi / Meja Kerja',
+        priorityTag: 'Prioritas Tinggi (Dokumen)',
+        reportTime: 'Kemarin, 21:40',
+        status: 'Baru Masuk',
+        statusType: 'gray'
       },
       {
-        id: 'R-8812',
-        type: 'report',
-        tag: 'New Report',
-        tagType: 'gray',
-        category: 'Electronics',
-        icon: 'laptop',
-        location: 'Gate B12 Charging Station',
-        title: 'Silver MacBook Pro 14" M3 Pro',
-        timeAgo: 'Reported 25m ago',
-        description: "Has sticker of 'Tech Summit 2024' on the top shell casing.",
-        lostReportId: 1045
+        id: '#TK-2024-0309',
+        ticketNumber: 'TK-2024-0309',
+        guestName: "Tan Sri Dato' Razak",
+        isVip: true,
+        room: 'Kamar 810 (Presidential)',
+        itemTitle: 'MacBook Air M2 Silver',
+        category: 'electronics',
+        iconType: 'laptop',
+        locationDetail: 'Tertinggal di Brankas Kamar',
+        reportTime: 'Kemarin, 17:15',
+        status: 'Menunggu Verifikasi',
+        statusType: 'blue',
+        priorityTag: null
       },
       {
-        id: 'M-4075',
-        type: 'match',
-        tag: 'Matched',
-        tagType: 'navy',
-        category: 'Luggage',
-        icon: 'luggage',
-        location: 'Carousel 4 Area',
-        title: 'Samsonite Hard Case (Navy)',
-        counterpartTitle: 'Found: Dark Blue Rolling Case with TSA Lock',
-        confidenceScore: 82,
-        dateReported: 'Today, 08:00 AM',
-        lostReportId: 1031,
-        foundReportId: 1998,
-        owner: 'Michael Chen',
-        finder: 'Baggage Handling Lead'
-      },
-      {
-        id: 'R-8803',
-        type: 'report',
-        tag: 'New Report',
-        tagType: 'gray',
-        category: 'Audio',
-        icon: 'headphones',
-        location: 'Security Checkpoint West',
-        title: 'AirPods Pro 2 in Spigen Case',
-        timeAgo: 'Reported 1h ago',
-        description: "Engraving on underside reads 'ALEX-2023'.",
-        lostReportId: 1040
+        id: '#TK-2024-0305',
+        ticketNumber: 'TK-2024-0305',
+        guestName: 'Ibu Dewi Maharani',
+        isVip: false,
+        room: 'Kamar 204 (Standard)',
+        itemTitle: 'Jaket Trench Coat Krem',
+        category: 'clothing',
+        iconType: 'clothing',
+        locationDetail: 'Lemari Pakaian No. 2',
+        reportTime: '18 Mar, 14:02',
+        status: 'Baru Masuk',
+        statusType: 'gray',
+        priorityTag: null
       }
     ];
   }
 
-  static getSystemDiagnostic() {
-    return {
-      matchingEnginePrecision: '99.8% precision',
-      queueThroughput: '0ms delay',
-      onDutyAgents: '4 active'
-    };
+  static getLiveActivities() {
+    return [
+      {
+        id: 1,
+        type: 'camera',
+        text: 'Siti Aminah (Housekeeping) mencatat temuan Jam Tangan di Kamar 314.',
+        time: '5 menit yang lalu'
+      },
+      {
+        id: 2,
+        type: 'phone',
+        text: 'Order Taker menerima tiket klaim dari tamu Kamar 408 (Telepon Tamu).',
+        time: '18 menit yang lalu'
+      },
+      {
+        id: 3,
+        type: 'handover',
+        text: 'Handover selesai untuk tiket #TK-2024-0310 diserahkan ke kurir GrabExpress.',
+        time: '42 menit yang lalu'
+      },
+      {
+        id: 4,
+        type: 'safe',
+        text: 'Brankas Utama FO dibuka oleh Supervisor Budi Santoso untuk verifikasi fisik.',
+        time: '1 jam yang lalu'
+      }
+    ];
+  }
+
+  static getCategories() {
+    return [
+      {
+        id: 'cat-1',
+        name: 'Elektronik & Gadget',
+        percent: 42,
+        items: 62,
+        color: '#2563eb',
+        icon: 'laptop'
+      },
+      {
+        id: 'cat-2',
+        name: 'Pakaian & Aksesori',
+        percent: 28,
+        items: 41,
+        color: '#f59e0b',
+        icon: 'hanger'
+      },
+      {
+        id: 'cat-3',
+        name: 'Dokumen / Kartu ID',
+        percent: 18,
+        items: 27,
+        color: '#10b981',
+        icon: 'card'
+      },
+      {
+        id: 'cat-4',
+        name: 'Lain-lain / Perlengkapan',
+        percent: 12,
+        items: 18,
+        color: '#94a3b8',
+        icon: 'box'
+      }
+    ];
+  }
+
+  static getUnlabeledStorageItems() {
+    return [
+      {
+        id: 'U-1',
+        title: 'Garmin Forerunner',
+        roomTag: 'Km. 314',
+        time: '08:12 WIB • HK',
+        shift: 'Shift A',
+        imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 'U-2',
+        title: 'Dompet Braun Büffel',
+        roomTag: 'Km. 502',
+        time: '07:45 WIB • HK',
+        shift: 'Shift A',
+        imageUrl: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 'U-3',
+        title: 'Kacamata RayBan',
+        roomTag: 'Lobby Resto',
+        time: '06:50 WIB • Resto',
+        shift: 'Team',
+        imageUrl: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400&auto=format&fit=crop&q=80'
+      },
+      {
+        id: 'U-4',
+        title: 'AirPods Pro Gen 2',
+        roomTag: 'Km. 810',
+        time: '06:30 WIB • HK',
+        shift: 'Shift A',
+        imageUrl: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400&auto=format&fit=crop&q=80'
+      }
+    ];
   }
 }
 

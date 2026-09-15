@@ -3,21 +3,23 @@ import { DashboardController } from './DashboardController';
 
 /**
  * Controller Hook: useDashboardController
- * Exposes reactive state and event handlers for the Admin Dashboard view
+ * Exposes reactive state and action handlers for the redesigned Grand Melia Admin Dashboard.
  */
 export function useDashboardController() {
   const [activeNav, setActiveNav] = useState('Dashboard');
-  const [activeFilter, setActiveFilter] = useState('pending'); // 'pending' | 'unmatched' | 'flagged'
+  const [activeTableFilter, setActiveTableFilter] = useState('all'); // 'all' | 'vip' | 'electronics'
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Dynamic queue list
-  const [queueItems, setQueueItems] = useState(() => DashboardController.getQueueItems());
+  // Operational Data
   const [metrics, setMetrics] = useState(() => DashboardController.getMetrics());
-  const diagnostics = useMemo(() => DashboardController.getDiagnostics(), []);
+  const [tickets, setTickets] = useState(() => DashboardController.getTickets());
+  const [activities, setActivities] = useState(() => DashboardController.getActivities());
+  const [categories] = useState(() => DashboardController.getCategories());
+  const [unlabeledItems] = useState(() => DashboardController.getUnlabeledItems());
 
-  // Modals state
-  const [selectedMatch, setSelectedMatch] = useState(null);
-  const [isCreateIncidentOpen, setIsCreateIncidentOpen] = useState(false);
+  // Modals & UI States
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [isQuickReportOpen, setIsQuickReportOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -26,127 +28,124 @@ export function useDashboardController() {
     setTimeout(() => setToastNotification(null), 4000);
   };
 
-  // Filtered queue items
-  const filteredQueue = useMemo(() => {
-    return queueItems.filter((item) => {
-      // Filter tab
-      if (activeFilter === 'pending' && item.type !== 'match') return false;
-      if (activeFilter === 'unmatched' && item.type !== 'report') return false;
+  // Filtered tickets based on tab and search
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((ticket) => {
+      // Tab filter
+      if (activeTableFilter === 'vip' && !ticket.isVip) return false;
+      if (activeTableFilter === 'electronics' && ticket.category !== 'electronics') return false;
 
       // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
-          item.id.toLowerCase().includes(q) ||
-          item.title.toLowerCase().includes(q) ||
-          item.location.toLowerCase().includes(q)
+          ticket.id.toLowerCase().includes(q) ||
+          ticket.guestName.toLowerCase().includes(q) ||
+          ticket.room.toLowerCase().includes(q) ||
+          ticket.itemTitle.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [queueItems, activeFilter, searchQuery]);
+  }, [tickets, activeTableFilter, searchQuery]);
 
   // Actions
-  const handleDismiss = (id) => {
-    setQueueItems((prev) => prev.filter((item) => item.id !== id));
-    showToast(`Queue item #${id} dismissed from immediate triage.`, 'info');
+  const handleOpenMatchModal = (ticket) => {
+    setSelectedTicket(ticket);
   };
 
-  const handleOpenReview = (matchItem) => {
-    setSelectedMatch(matchItem);
+  const handleCloseMatchModal = () => {
+    setSelectedTicket(null);
   };
 
-  const handleCloseReview = () => {
-    setSelectedMatch(null);
-  };
-
-  const handleApproveMatch = async (matchId) => {
+  const handleConfirmMatch = async (ticketId) => {
     setActionLoading(true);
-    const res = await DashboardController.approveMatch(matchId);
+    const res = await DashboardController.verifyTicketMatch(ticketId);
     setActionLoading(false);
     if (res.success) {
-      setQueueItems((prev) => prev.filter((item) => item.id !== matchId));
-      setSelectedMatch(null);
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === ticketId
+            ? { ...t, status: 'Terverifikasi', statusType: 'green' }
+            : t
+        )
+      );
+      setSelectedTicket(null);
       showToast(res.message, 'success');
-      // Increment confirmed stat
+      // Update metrics
       setMetrics((prev) => ({
         ...prev,
-        confirmedMonth: {
-          ...prev.confirmedMonth,
-          value: prev.confirmedMonth.value + 1
+        pendingVerification: {
+          ...prev.pendingVerification,
+          value: Math.max(0, prev.pendingVerification.value - 1)
         },
-        pendingMatches: {
-          ...prev.pendingMatches,
-          value: Math.max(0, prev.pendingMatches.value - 1)
+        verifiedMonth: {
+          ...prev.verifiedMonth,
+          value: prev.verifiedMonth.value + 1
         }
       }));
     }
   };
 
-  const handleRejectMatch = async (matchId) => {
+  const handleExportRecap = async () => {
     setActionLoading(true);
-    const res = await DashboardController.rejectMatch(matchId);
+    const res = await DashboardController.exportRecapReport();
     setActionLoading(false);
     if (res.success) {
-      setQueueItems((prev) => prev.filter((item) => item.id !== matchId));
-      setSelectedMatch(null);
-      showToast(res.message, 'warning');
+      showToast(res.message, 'success');
     }
   };
 
-  const handleScanDatabase = (reportId) => {
-    showToast(`AI vector indexing scanned database for #${reportId}. No duplicates detected.`, 'info');
-  };
-
-  const handleSaveIncident = async (incidentData) => {
+  const handleSaveQuickReport = async (reportData) => {
     setActionLoading(true);
-    const res = await DashboardController.createIncident(incidentData);
+    const res = await DashboardController.createIncident(reportData);
     setActionLoading(false);
     if (res.success) {
-      setIsCreateIncidentOpen(false);
+      setIsQuickReportOpen(false);
       showToast(res.message, 'success');
-      // Add to queue if active
-      setQueueItems((prev) => [
-        {
-          id: res.identifier,
-          type: 'report',
-          tag: 'New Report',
-          tagType: 'gray',
-          category: incidentData.category || 'General',
-          icon: 'fileText',
-          location: incidentData.location || 'Terminal Area',
-          title: incidentData.title,
-          timeAgo: 'Reported just now',
-          description: incidentData.description || 'Pending manual verification.'
-        },
-        ...prev
-      ]);
+      // Add new ticket to top of table
+      const newTicket = {
+        id: res.identifier,
+        ticketNumber: res.identifier.replace('#', ''),
+        guestName: reportData.guestName || 'Tamu FO',
+        isVip: reportData.isVip || false,
+        room: reportData.room || 'Lobby Utama',
+        itemTitle: reportData.title || 'Barang Tertinggal',
+        category: reportData.category || 'general',
+        iconType: 'box',
+        locationDetail: reportData.location || 'Area Hotel',
+        reportTime: 'Baru saja',
+        status: 'Baru Masuk',
+        statusType: 'gray',
+        priorityTag: reportData.isVip ? 'Prioritas VIP' : null
+      };
+      setTickets((prev) => [newTicket, ...prev]);
     }
   };
 
   return {
     activeNav,
     setActiveNav,
-    activeFilter,
-    setActiveFilter,
+    activeTableFilter,
+    setActiveTableFilter,
     searchQuery,
     setSearchQuery,
     metrics,
-    diagnostics,
-    filteredQueue,
-    totalQueueCount: queueItems.length,
-    selectedMatch,
-    isCreateIncidentOpen,
-    setIsCreateIncidentOpen,
+    tickets: filteredTickets,
+    totalTicketCount: tickets.length,
+    activities,
+    categories,
+    unlabeledItems,
+    selectedTicket,
+    isQuickReportOpen,
+    setIsQuickReportOpen,
     toastNotification,
     actionLoading,
-    handleDismiss,
-    handleOpenReview,
-    handleCloseReview,
-    handleApproveMatch,
-    handleRejectMatch,
-    handleScanDatabase,
-    handleSaveIncident
+    handleOpenMatchModal,
+    handleCloseMatchModal,
+    handleConfirmMatch,
+    handleExportRecap,
+    handleSaveQuickReport
   };
 }
 
