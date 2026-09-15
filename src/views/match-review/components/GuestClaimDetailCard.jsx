@@ -48,7 +48,7 @@ export function GuestClaimDetailCard({
             <span className="attr-label">KATEGORI DIKLAIM</span>
             <span className="attr-value">
               <Watch size={15} className="attr-inline-icon" />
-              {ticket?.category || 'Elektronik • Smartwatch'}
+              {ticket?.category || '-'}
             </span>
           </div>
           <div 
@@ -63,7 +63,7 @@ export function GuestClaimDetailCard({
         <div className="claim-attribute-item">
           <div className="attr-meta">
             <span className="attr-label">MEREK &amp; MODEL</span>
-            <span className="attr-value">{ticket?.itemName || ticket?.brand || 'Garmin Venu SQ (Tali Karet Hitam)'}</span>
+            <span className="attr-value">{ticket?.itemName || ticket?.brand || '-'}</span>
           </div>
           <div 
             className={`attr-status-badge ${verifiedPoints.model ? 'verified' : ''}`}
@@ -79,7 +79,7 @@ export function GuestClaimDetailCard({
             <span className="attr-label">WARNA DOMINAN</span>
             <span className="attr-value">
               <span className="color-swatch-dot black"></span>
-              {ticket?.color || 'Hitam Matte'}
+              {ticket?.color || '-'}
             </span>
           </div>
           <div 
@@ -96,7 +96,7 @@ export function GuestClaimDetailCard({
             <span className="attr-label">LOKASI DUGAAN TAMU</span>
             <span className="attr-value">
               <MapPin size={15} className="attr-inline-icon" />
-              {ticket?.locationLost || 'Meja Nakas Kanan Kamar 314'}
+              {ticket?.locationLost || '-'}
             </span>
           </div>
           <div 
@@ -119,7 +119,7 @@ export function GuestClaimDetailCard({
           <span className="secret-level-pill">Ciri Khusus Terlindungi</span>
         </div>
         <p className="secret-quote-text">
-          &ldquo;{ticket?.secretDetail || 'Ada goresan halus sudut kiri atas, wallpaper foto anjing golden retriever.'}&rdquo;
+          &ldquo;{ticket?.secretDetail || '-'}&rdquo;
         </p>
         <div className="secret-match-feedback">
           <span>Cocok dengan temuan fisik di brankas FO</span>
@@ -133,14 +133,14 @@ export function GuestClaimDetailCard({
         <div className="reporter-details">
           <div className="reporter-contact-row">
             <Phone size={13} />
-            <span>{ticket?.phone || '+62 812-3456-7890'}</span>
+            <span>{ticket?.phone || '-'}</span>
           </div>
           <div className="reporter-contact-row">
             <Mail size={13} />
-            <span>{ticket?.email || 'hendra.gunawan@email.com'}</span>
+            <span>{ticket?.email || '-'}</span>
           </div>
           <div className="reporter-log-meta">
-            <span>Dilaporkan: {ticket?.reportedAt || 'Hari ini, 11:45 WIB'}</span>
+            <span>Dilaporkan: {ticket?.reportedAt || '-'}</span>
           </div>
         </div>
       </div>

@@ -36,20 +36,20 @@ export function MatchReviewView({
     secret: true
   });
 
-  // Pick first pending ticket or fallback
+  // Pick first pending ticket or fallback to empty
   const activeTicket = tickets.find(t => t.status === 'Menunggu Verifikasi') || tickets[0] || {
-    id: '#TK-2024-0314',
-    guestName: 'Hendra Gunawan',
-    roomNumber: 'Kamar 314',
-    itemName: 'Garmin Venu SQ (Tali Karet Hitam)',
-    category: 'Elektronik • Smartwatch',
-    color: 'Hitam Matte',
-    locationLost: 'Meja Nakas Kanan Kamar 314',
-    secretDetail: 'Ada goresan halus sudut kiri atas, wallpaper foto anjing golden retriever.',
-    phone: '+62 812-3456-7890',
-    email: 'hendra.gunawan@email.com',
+    id: '-',
+    guestName: '-',
+    roomNumber: '-',
+    itemName: '-',
+    category: '-',
+    color: '-',
+    locationLost: '-',
+    secretDetail: '-',
+    phone: '-',
+    email: '-',
     status: 'Menunggu Verifikasi',
-    reportedAt: '14 Mar 2024, 10:50 WIB'
+    reportedAt: '-'
   };
 
   const showToast = (message, type = 'success') => {

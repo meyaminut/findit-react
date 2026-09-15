@@ -51,13 +51,7 @@ export class ClaimTicketModel {
   }
 
   static getAutoMatchCandidate() {
-    return {
-      storageLocker: 'Locker B2 Housekeeping',
-      itemTitle: 'Jam tangan Garmin',
-      discoveredAt: '09:30 WIB',
-      reportedBy: 'Room Attendant Siti A.',
-      candidateCount: 1
-    };
+    return null;
   }
 }
 

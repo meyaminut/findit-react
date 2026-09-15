@@ -17,9 +17,9 @@ export function MatchReviewHeader({ ticket, onProtocolClick }) {
           <span className="guest-icon-badge">
             <User size={18} />
           </span>
-          <h1 className="guest-main-name">{ticket?.guestName || 'Hendra Gunawan'}</h1>
+          <h1 className="guest-main-name">{ticket?.guestName || '-'}</h1>
           <span className="guest-stay-meta">
-            ({ticket?.roomNumber || 'Kamar 314'} • {ticket?.reportedAt || '14 Mar 2024, 10:50 WIB'})
+            ({ticket?.roomNumber || '-'} • {ticket?.reportedAt || '-'})
           </span>
         </div>
       </div>

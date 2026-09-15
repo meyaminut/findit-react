@@ -9,10 +9,10 @@ export function TopNavbar({
   searchQuery = '', 
   onSearchChange,
   onProfileClick,
-  userName = 'Sarah Jenkins',
-  userRole = 'Senior Operations Admin',
-  userAvatar = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
-  notificationCount = 3
+  userName = 'Admin',
+  userRole = 'Operations Admin',
+  userAvatar = '',
+  notificationCount = 0
 }) {
   return (
     <header className="dashboard-top-navbar">
@@ -44,11 +44,17 @@ export function TopNavbar({
           title="Kelola Profil & Administrator"
         >
           <div className="user-avatar-wrap">
-            <img
-              src={userAvatar}
-              alt={userName}
-              className="user-profile-img"
-            />
+            {userAvatar ? (
+              <img
+                src={userAvatar}
+                alt={userName}
+                className="user-profile-img"
+              />
+            ) : (
+              <div className="user-profile-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#00164E', color: '#fff', fontSize: '13px', fontWeight: 600 }}>
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="user-profile-text">
             <span className="user-full-name">{userName}</span>

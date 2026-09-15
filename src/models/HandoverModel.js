@@ -1,53 +1,55 @@
 /**
  * Model: HandoverModel
- * Defines state and data structures for the official Grand Melia Lost & Found Handover process.
- * Follows strict MVC architecture.
+ * Defines empty/placeholder state for the Handover process.
+ * Real ticket data should be passed in from StorageService at the view level.
  */
 
 export const initialHandoverData = {
-  ticketId: '#TK-2024-0314',
-  itemId: '#LF-2024-0314-08',
+  ticketId: '-',
+  itemId: '-',
   status: 'TERVERIFIKASI (SIAP DIAMBIL)',
-  timestamp: '14 Mar 2024, 14:10 WIB',
+  timestamp: '-',
   guest: {
-    name: 'Hendra Gunawan',
-    room: '314',
-    roomType: 'Deluxe Suite',
-    phone: '+62 812-3456-7890',
-    idCard: '317102********',
+    name: '-',
+    room: '-',
+    roomType: '-',
+    phone: '-',
+    idCard: '-',
     idType: 'KTP'
   },
   item: {
-    name: 'Garmin Venu SQ',
-    edition: 'Garmin Venu SQ Music Edition (Black Strap)',
-    serialNumber: 'GMN-988421-X',
-    finder: 'Siti Rahma (HK)',
-    location: 'Nightstand Kamar 314',
-    image: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=480&auto=format&fit=crop&q=80'
+    name: '-',
+    edition: '-',
+    serialNumber: '-',
+    finder: '-',
+    location: '-',
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=480&auto=format&fit=crop&q=80'
   },
   vault: {
-    lockerId: 'Loker B-12',
+    lockerId: '-',
     name: 'Brankas Utama',
-    keyTag: 'Kunci FO-DM'
+    keyTag: '-'
   },
   officer: {
-    name: 'Budi Santoso',
+    name: '-',
     role: 'Duty Manager Front Office'
   },
   checklists: {
-    physicalIdVerified: true,
-    biometricRoomMatched: true,
-    itemInspectedByGuest: true
+    physicalIdVerified: false,
+    biometricRoomMatched: false,
+    itemInspectedByGuest: false
   },
-  pickupMethod: 'direct', // 'direct' | 'courier' | 'authorization'
+  pickupMethod: 'direct',
   document: {
-    filename: 'Tanda_Terima_Hendra_314.jpg',
-    size: '2.4 MB',
-    uploadedAt: '14:10 WIB',
-    uploader: 'Duty Desk (Budi Santoso)',
-    previewUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80'
+    title: 'Tanda Terima Serah Terima',
+    filename: 'Tanda_Terima.pdf',
+    fileSize: '-',
+    size: '-',
+    uploadedAt: '-',
+    uploader: '-',
+    previewUrl: ''
   },
-  additionalNotes: 'Tamu mengambil langsung sebelum menuju bandara Soekarno-Hatta. Diterima dalam kondisi menyala baik dan baterai 84%.'
+  additionalNotes: ''
 };
 
 export default initialHandoverData;

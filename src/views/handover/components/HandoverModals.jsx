@@ -39,19 +39,19 @@ export function HandoverModals({
                 <div className="receipt-content-lines">
                   <div className="receipt-row">
                     <span>Nomor Tiket:</span>
-                    <strong>#TK-2024-0314</strong>
+                    <strong>(Akan diisi saat tiket diproses)</strong>
                   </div>
                   <div className="receipt-row">
                     <span>Nama Tamu Penerima:</span>
-                    <strong>Hendra Gunawan (Kamar 314)</strong>
+                    <strong>(Akan diisi dari data tamu terverifikasi)</strong>
                   </div>
                   <div className="receipt-row">
                     <span>Barang Diterima:</span>
-                    <strong>Garmin Venu SQ Music (S/N: GR-8921-X)</strong>
+                    <strong>(Akan diisi dari data barang terverifikasi)</strong>
                   </div>
                   <div className="receipt-row">
                     <span>Waktu Penyerahan:</span>
-                    <strong>14 Maret 2024, 14:15 WIB</strong>
+                    <strong>(Akan tercatat otomatis saat handover)</strong>
                   </div>
                 </div>
 
@@ -60,17 +60,17 @@ export function HandoverModals({
                   <div className="signature-col">
                     <span className="sign-title">Penerima Barang (Tamu)</span>
                     <div className="signature-box signed">
-                      <span className="mock-handwriting">Hendra G.</span>
+                      <span className="mock-handwriting">............</span>
                     </div>
-                    <span className="sign-name">Hendra Gunawan</span>
+                    <span className="sign-name">(Tanda Tangan Tamu)</span>
                   </div>
 
                   <div className="signature-col">
                     <span className="sign-title">Petugas Penyerah (FO)</span>
                     <div className="signature-box signed">
-                      <span className="mock-handwriting">Dimas FO</span>
+                      <span className="mock-handwriting">............</span>
                     </div>
-                    <span className="sign-name">Dimas Wicaksono</span>
+                    <span className="sign-name">(Tanda Tangan Petugas FO)</span>
                   </div>
                 </div>
               </div>
