@@ -1,0 +1,709 @@
+/* ==========================================================================
+   UserReportForm.css — Form "Laporkan Barang Tertinggal (Guest Report)"
+   Plain CSS mengikuti design token proyek (Primary #00236F, Accent #FEA619).
+   ========================================================================== */
+
+.guest-report-page {
+  min-height: 100vh;
+  background: #f1f4fa;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+.guest-report-frame {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #f8fafd;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------- Header -------------------------------- */
+.gr-header {
+  background: linear-gradient(135deg, #00236f 0%, #0a3aa8 62%, #1153d6 100%);
+  color: #ffffff;
+  width: 100%;
+  padding: 32px 20px 48px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+}
+
+.gr-header::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(254, 166, 25, 0.35) 0%, transparent 65%);
+}
+
+.gr-header-inner {
+  position: relative;
+}
+
+.gr-header-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+
+.gr-header-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.9);
+}
+
+.gr-title {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  margin: 0 0 7px;
+}
+
+.gr-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+}
+
+.gr-content {
+  flex: 1;
+  width: 100%;
+  padding: 0 20px 30px;
+  margin-top: 0;
+}
+
+/* ----------------------------- Banner Top ------------------------------ */
+/* Card putih melayang di atas banner biru (efek tumpuk rapi) */
+.gr-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 18px;
+  padding: 18px 16px;
+  position: relative;
+  z-index: 2;
+  margin-top: -24px;
+  box-shadow: 0 14px 30px -18px rgba(0, 35, 111, 0.45);
+}
+
+.gr-banner-icon {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: #fea619;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px -6px rgba(254, 166, 25, 0.7);
+}
+
+.gr-banner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.gr-banner-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #16a34a;
+}
+
+.gr-banner-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #1a1b21;
+  margin: 0;
+}
+
+.gr-banner-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #444651;
+  margin: 0;
+}
+
+/* --------------------------- Room Location Card ------------------------ */
+.gr-room-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  box-shadow: 0 6px 16px -12px rgba(0, 35, 111, 0.35);
+}
+
+.gr-room-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(0, 35, 111, 0.08);
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gr-room-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gr-room-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #8a8b9a;
+}
+
+.gr-room-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1b21;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gr-change-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #00236f;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 6px 2px;
+}
+
+.gr-change-btn:hover {
+  text-decoration: underline;
+}
+
+/* -------------------------------- Form --------------------------------- */
+.gr-form {
+  margin-top: 22px;
+}
+
+.gr-section {
+  margin-bottom: 26px;
+}
+
+.gr-section-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #1a1b21;
+  letter-spacing: -0.2px;
+  margin-bottom: 14px;
+}
+
+.gr-section-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(0, 35, 111, 0.09);
+  color: #00236f;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gr-field {
+  margin-bottom: 16px;
+}
+
+.gr-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1b21;
+  margin-bottom: 8px;
+}
+
+.gr-required {
+  color: #dc2626;
+}
+
+.gr-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #e3e1ec;
+  background: #f4f3fa;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1b21;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gr-input::placeholder {
+  color: #a0a1ae;
+  font-weight: 500;
+}
+
+.gr-input:focus {
+  outline: none;
+  border-color: #00236f;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.12);
+}
+
+.gr-textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.gr-input-error {
+  border-color: #dc2626;
+  background: #fff5f5;
+}
+
+.gr-error-text {
+  display: block;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+/* --------------------------- Quick Category Pills ----------------------- */
+.gr-pill-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #444651;
+  margin-bottom: 9px;
+}
+
+.gr-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gr-pill {
+  border: 1.5px solid #e3e1ec;
+  background: #ffffff;
+  color: #444651;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gr-pill:hover {
+  border-color: #c4c6d6;
+}
+
+.gr-pill.active {
+  background: #00236f;
+  border-color: #00236f;
+  color: #ffffff;
+  box-shadow: 0 6px 14px -6px rgba(0, 35, 111, 0.55);
+}
+
+/* ---------------------------- Location Pills --------------------------- */
+.gr-location-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gr-location-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px dashed #c4c6d6;
+  background: #ffffff;
+  color: #444651;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 13px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gr-location-pill .gr-location-plus {
+  color: #00236f;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.gr-location-pill:hover {
+  border-color: #00236f;
+}
+
+.gr-location-pill.active {
+  border-style: solid;
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.06);
+  color: #15803d;
+}
+
+/* ----------------------------- Upload Box ------------------------------ */
+.gr-upload-wrap {
+  position: relative;
+}
+
+.gr-field-upload {
+  margin-bottom: 20px;
+}
+
+.gr-file-input {
+  display: none;
+}
+
+.gr-upload-box {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(238, 242, 255, 0.7);
+  border: 2px dashed #c4c6d6;
+  border-radius: 14px;
+  padding: 26px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.gr-upload-box:hover {
+  border-color: #00236f;
+  background: #eef2ff;
+}
+
+.gr-upload-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #00236f;
+  border: 1.5px solid #e3e1ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px -10px rgba(0, 35, 111, 0.5);
+  margin-bottom: 4px;
+}
+
+.gr-upload-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1b21;
+  text-align: center;
+}
+
+.gr-upload-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #8a8b9a;
+  text-align: center;
+}
+
+.gr-upload-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.gr-photo-thumb {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1.5px solid #e3e1ec;
+}
+
+.gr-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gr-photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.gr-add-photo {
+  width: 74px;
+  height: 74px;
+  border-radius: 12px;
+  border: 1.5px dashed #c4c6d6;
+  background: #ffffff;
+  color: #8a8b9a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gr-add-photo:hover {
+  border-color: #00236f;
+  color: #00236f;
+}
+
+/* ---------------------------- Contact Card ----------------------------- */
+.gr-contact-card {
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 16px -12px rgba(0, 35, 111, 0.35);
+}
+
+.gr-contact-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 14px;
+}
+
+.gr-contact-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(254, 166, 25, 0.14);
+  color: #b45309;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gr-contact-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.gr-input-wrap {
+  position: relative;
+}
+
+.gr-input-icon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  transform: translateY(-50%);
+  color: #7e7f8e;
+  display: flex;
+  align-items: center;
+}
+
+.gr-input-inner {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #e3e1ec;
+  background: #f4f3fa;
+  border-radius: 12px;
+  padding: 12px 14px 12px 40px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1b21;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.gr-input-inner:focus {
+  outline: none;
+  border-color: #00236f;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.12);
+}
+
+/* ------------------------------ Toggle Row ------------------------------ */
+.gr-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f4f3fa;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 6px;
+}
+
+.gr-toggle-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gr-toggle-title {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.gr-toggle-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #8a8b9a;
+  line-height: 1.45;
+}
+
+.gr-switch {
+  flex-shrink: 0;
+  width: 46px;
+  height: 27px;
+  border-radius: 999px;
+  border: none;
+  background: #d8d8e2;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.25s;
+  padding: 0;
+}
+
+.gr-switch.on {
+  background: #16a34a;
+}
+
+.gr-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s;
+}
+
+.gr-switch.on .gr-switch-thumb {
+  transform: translateX(19px);
+}
+
+/* ---------------------------- Submit Button ----------------------------- */
+.gr-submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #fea619;
+  border: none;
+  color: #1a1b21;
+  font-size: 14.5px;
+  font-weight: 800;
+  padding: 15px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 12px 24px -10px rgba(254, 166, 25, 0.85);
+  transition: all 0.2s;
+  font-family: inherit;
+  margin-top: 4px;
+}
+
+.gr-submit-btn:hover {
+  background: #f59e0b;
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px -12px rgba(254, 166, 25, 0.95);
+}
+
+.gr-submit-btn:active {
+  transform: translateY(0);
+}
+
+.gr-submit-arrow {
+  transition: transform 0.2s;
+}
+
+.gr-submit-btn:hover .gr-submit-arrow {
+  transform: translateX(3px);
+}
+
+/* ------------------------------ Footer Info ----------------------------- */
+.gr-footer-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a8b9a;
+  text-align: center;
+  margin: 16px 0 0;
+}
+
+.gr-footer-info svg {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+/* ------------------------------- Responsive ---------------------------- */
+@media (min-width: 480px) {
+  .guest-report-page {
+    padding: 20px 0;
+  }
+
+  .guest-report-frame {
+    border-radius: 22px;
+    min-height: auto;
+    box-shadow: 0 20px 50px -24px rgba(0, 35, 111, 0.35);
+  }
+}

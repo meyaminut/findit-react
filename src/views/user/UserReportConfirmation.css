@@ -1,0 +1,499 @@
+/* ==========================================================================
+   UserReportConfirmation.css — Halaman "Konfirmasi Laporan"
+   Plain CSS mengikuti design token proyek (Primary #00236F, Accent #FEA619).
+   ========================================================================== */
+
+.user-confirmation-page {
+  min-height: 100vh;
+  background: #f1f4fa;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+.user-confirmation-frame {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #f8fafd;
+}
+
+/* --------------------------- Header Konfirmasi ------------------------- */
+.uc-header {
+  background: linear-gradient(135deg, #00236f 0%, #0a3aa8 60%, #1250cf 100%);
+  color: #ffffff;
+  padding: 34px 24px 58px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.uc-header::before {
+  content: '';
+  position: absolute;
+  top: -90px;
+  right: -70px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(254, 166, 25, 0.3) 0%, transparent 65%);
+}
+
+.uc-success-icon {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.45);
+}
+
+.uc-success-check {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fea619;
+  color: #1a1b21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px -5px rgba(254, 166, 25, 0.9);
+}
+
+.uc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.uc-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 9px;
+}
+
+.uc-subtitle {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 auto;
+  max-width: 350px;
+}
+
+/* ------------------------ Ticket Summary White Card --------------------- */
+.uc-summary {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 18px;
+  padding: 18px 18px 16px;
+  margin: -30px 20px 0;
+  box-shadow: 0 14px 30px -18px rgba(0, 35, 111, 0.45);
+}
+
+.uc-ticket-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.uc-ticket-left {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.uc-ticket-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: #8a8b9a;
+}
+
+.uc-ticket-number {
+  font-size: 20px;
+  font-weight: 800;
+  color: #00236f;
+  letter-spacing: -0.3px;
+}
+
+.uc-copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f4f3fa;
+  border: 1.5px solid #e3e1ec;
+  color: #00236f;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.uc-copy-btn:hover {
+  border-color: #00236f;
+}
+
+.uc-copy-btn.copied {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.uc-divider {
+  height: 1px;
+  background: #eef0f6;
+  margin: 16px 0;
+}
+
+.uc-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.uc-item-icon {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: rgba(0, 35, 111, 0.08);
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uc-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.uc-item-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  color: #8a8b9a;
+}
+
+.uc-item-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.uc-item-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #444651;
+}
+
+.uc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff7e8;
+  border: 1.5px solid #fea619;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 13px;
+  border-radius: 999px;
+  margin-top: 14px;
+}
+
+.uc-estimate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #eef2ff;
+  border: 1px solid #dfe6ff;
+  border-radius: 13px;
+  padding: 12px 13px;
+  margin-top: 14px;
+}
+
+.uc-estimate-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px -8px rgba(0, 35, 111, 0.5);
+}
+
+.uc-estimate-text {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #444651;
+}
+
+.uc-estimate-text strong {
+  color: #00236f;
+  font-weight: 800;
+}
+
+/* ----------------------------- Timeline -------------------------------- */
+.uc-timeline {
+  margin: 20px 20px 0;
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 18px;
+  padding: 16px 16px 8px;
+  box-shadow: 0 6px 16px -12px rgba(0, 35, 111, 0.35);
+}
+
+.uc-timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.uc-timeline-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.uc-stage-badge {
+  flex-shrink: 0;
+  background: rgba(0, 35, 111, 0.09);
+  color: #00236f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+}
+
+.uc-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.uc-step {
+  display: flex;
+  gap: 13px;
+}
+
+.uc-step-track {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.uc-step-icon {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.uc-step-icon-done {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 8px 16px -8px rgba(22, 163, 74, 0.8);
+}
+
+.uc-step-icon-progress {
+  background: #ffffff;
+  border: 2px solid #2563eb;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.16);
+}
+
+.uc-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+.uc-step-icon-pending {
+  background: #f4f3fa;
+  border: 1.5px solid #e3e1ec;
+  color: #8a8b9a;
+}
+
+.uc-step-line {
+  position: absolute;
+  top: 34px;
+  bottom: -10px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: #eef0f6;
+}
+
+.uc-step-done .uc-step-line {
+  background: #16a34a;
+}
+
+.uc-step-progress .uc-step-line {
+  background: linear-gradient(180deg, #2563eb 0%, #eef0f6 70%);
+}
+
+.uc-step:last-child .uc-step-line {
+  display: none;
+}
+
+.uc-step-body {
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 20px;
+}
+
+.uc-step:last-child .uc-step-body {
+  padding-bottom: 12px;
+}
+
+.uc-step-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.uc-step-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.uc-step-pending .uc-step-title {
+  color: #8a8b9a;
+}
+
+.uc-step-badge {
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.uc-step-desc {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #444651;
+  margin-top: 3px;
+}
+
+.uc-step-pending .uc-step-desc {
+  color: #a0a1ae;
+}
+
+/* --------------------------- Action Buttons ----------------------------- */
+.uc-actions {
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.uc-primary-btn,
+.uc-secondary-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 15px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.uc-primary-btn {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 12px 24px -10px rgba(37, 99, 235, 0.75);
+}
+
+.uc-primary-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.uc-secondary-btn {
+  background: #eef2ff;
+  color: #00236f;
+  border: 1.5px solid #dfe6ff;
+}
+
+.uc-secondary-btn:hover {
+  background: #e0e7ff;
+  transform: translateY(-1px);
+}
+
+.uc-footer-hint {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8a8b9a;
+  text-align: center;
+  padding: 18px 20px 28px;
+  margin: 0;
+}
+
+/* ------------------------------- Responsive ----------------------------- */
+@media (min-width: 480px) {
+  .user-confirmation-page {
+    padding: 20px 0;
+  }
+
+  .user-confirmation-frame {
+    border-radius: 22px;
+    min-height: auto;
+    box-shadow: 0 20px 50px -24px rgba(0, 35, 111, 0.35);
+    margin: 0 auto;
+  }
+}

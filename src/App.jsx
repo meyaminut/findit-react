@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 import AdminLoginView from './views/auth/AdminLoginView';
 import AdminDashboardView from './views/dashboard/AdminDashboardView';
 import MatchReviewView from './views/match-review/MatchReviewView';
@@ -8,20 +10,64 @@ import NewClaimTicketView from './views/claim-ticket/NewClaimTicketView';
 import PostCheckoutSurveyView from './views/survey/PostCheckoutSurveyView';
 import ClaimTicketsListView from './views/claim-tickets/ClaimTicketsListView';
 
+import UserOnboarding from './views/auth/UserOnboarding';
+import UserLogin from './views/auth/UserLogin';
+import UserRegister from './views/auth/UserRegister';
+import UserSuccessWelcome from './views/auth/UserSuccessWelcome';
+import UserDashboard from './views/dashboard/UserDashboard';
+
+import UserSurveyLanding from './views/user/UserSurveyLanding';
+import UserReportForm from './views/user/UserReportForm';
+import UserReportConfirmation from './views/user/UserReportConfirmation';
+import UserThanksScreen from './views/user/UserSuccessWelcome';
+
 /**
- * Root Application Component
- * Controls active view routing across MVC Views:
- * - 'login' (Admin Login Screen)
- * - 'dashboard' (5. Admin Dashboard / Control Console)
- * - 'claim-tickets' (Daftar Tiket Klaim Tamu)
- * - 'new-claim' (6. Buat Laporan Tamu / New Claim Ticket)
- * - 'match-review' (7. Verifikasi & Pencocokan / Match Review)
- * - 'handover' (8. Handover Screen / Proses Handover & Penyelesaian)
- * - 'all-reports' (9. Barang Temuan / Log Barang Temuan Master Inventory)
- * - 'survei-checkout' (10. Survei Pasca-Checkout & Deteksi Proaktif)
+ * Root Application Component.
+ *
+ * Routing (React Router):
+ * - `/user` | `/user/onboarding` -> UserOnboarding (halaman pertama user)
+ * - `/user/login`                -> UserLogin
+ * - `/user/register`             -> UserRegister
+ * - `/user/welcome`              -> UserSuccessWelcome
+ * - `/user/welcome`              -> UserSuccessWelcome
+ * - `/user/dashboard`            -> UserDashboard (tanpa Admin Layout)
+ * - `/user/survey`               -> UserSurveyLanding
+ * - `/user/report-form`          -> UserReportForm
+ * - `/user/confirmation`         -> UserReportConfirmation
+ * - `/user/thanks`               -> UserSuccessWelcome (Thank You, views/user)
+ * - semua path lain              -> AdminShell (state-driven, existing behavior)
+ *
+ * Route user dirender mandiri, TIDAK dibungkus Admin Layout/Sidebar.
  */
 function App() {
-  // Set default route to 'claim-tickets' to inspect the newly created view
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* ---- User Portal (standalone pages, no admin layout) ---- */}
+        <Route path="/user" element={<UserOnboarding />} />
+        <Route path="/user/onboarding" element={<UserOnboarding />} />
+        <Route path="/user/login" element={<UserLogin />} />
+        <Route path="/user/register" element={<UserRegister />} />
+        <Route path="/user/welcome" element={<UserSuccessWelcome />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/user/survey" element={<UserSurveyLanding />} />
+        <Route path="/user/report-form" element={<UserReportForm />} />
+        <Route path="/user/confirmation" element={<UserReportConfirmation />} />
+        <Route path="/user/thanks" element={<UserThanksScreen />} />
+
+        {/* ---- Admin Portal (state-driven, existing behavior) ---- */}
+        <Route path="*" element={<AdminShell />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+/**
+ * Admin Portal shell. Kept state-driven to avoid breaking the existing
+ * admin flow (login -> dashboard -> claim-tickets -> ...).
+ */
+function AdminShell() {
+  // Default route to 'claim-tickets' to inspect the newly created admin view
   const [activeRoute, setActiveRoute] = useState('claim-tickets');
 
   const handleLogout = () => {
@@ -117,4 +163,3 @@ function App() {
 }
 
 export default App;
-

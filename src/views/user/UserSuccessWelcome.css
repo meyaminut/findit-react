@@ -1,0 +1,467 @@
+/* ==========================================================================
+   UserSuccessWelcome.css — Halaman Ucapan Terima Kasih (Thank You Screen)
+   Plain CSS mengikuti design token proyek (Primary #00236F, Accent #FEA619).
+   ========================================================================== */
+
+.tw-page {
+  min-height: 100vh;
+  background: #f1f4fa;
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+.tw-frame {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #f8fafd;
+}
+
+/* --------------------------- Hero & Thank You --------------------------- */
+.tw-hero {
+  padding: 30px 20px 0;
+  text-align: center;
+}
+
+.tw-hero-icon {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(0, 35, 111, 0.1);
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 16px 34px -16px rgba(0, 35, 111, 0.55);
+}
+
+.tw-hero-heart {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fea619;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px -5px rgba(254, 166, 25, 0.9);
+}
+
+.tw-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef2ff;
+  border: 1px solid #dfe6ff;
+  color: #00236f;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 7px 14px;
+  border-radius: 999px;
+  margin-bottom: 13px;
+}
+
+.tw-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #1a1b21;
+  margin: 0 0 9px;
+}
+
+.tw-subtitle {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #444651;
+  margin: 0 auto;
+  max-width: 400px;
+}
+
+.tw-subtitle + .tw-subtitle {
+  margin-top: 6px;
+}
+
+/* Banner Lobby Image */
+.tw-banner {
+  position: relative;
+  height: 150px;
+  margin: 20px 0 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 30px -16px rgba(0, 35, 111, 0.55);
+}
+
+.tw-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tw-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 35, 111, 0.05) 0%, rgba(0, 35, 111, 0.75) 100%);
+}
+
+.tw-banner-loc {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #00236f;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.4);
+  max-width: calc(100% - 24px);
+}
+
+/* --------------------------- Summary White Card -------------------------- */
+.tw-summary {
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 20px 20px 0;
+  box-shadow: 0 6px 16px -12px rgba(0, 35, 111, 0.35);
+}
+
+.tw-sum-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.tw-sum-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(0, 35, 111, 0.08);
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tw-sum-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tw-sum-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #8a8b9a;
+}
+
+.tw-sum-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.tw-sum-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.tw-sum-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: #444651;
+}
+
+.tw-sum-status {
+  font-size: 10px;
+  font-weight: 800;
+  color: #16a34a;
+}
+
+/* Rewards Box */
+.tw-reward-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7e8;
+  border: 1px solid #fde7c0;
+  border-radius: 13px;
+  padding: 12px 13px;
+  margin-top: 12px;
+}
+
+.tw-reward-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fea619;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tw-reward-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #b45309;
+}
+
+.tw-reward-sub {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #92540b;
+  margin-top: 2px;
+}
+
+/* E-Folio Button */
+.tw-folio-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f4f3fa;
+  border: 1.5px solid #e3e1ec;
+  border-radius: 13px;
+  padding: 13px 14px;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tw-folio-btn:hover {
+  border-color: #00236f;
+}
+
+.tw-folio-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px -8px rgba(0, 35, 111, 0.5);
+}
+
+.tw-folio-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1a1b21;
+}
+
+.tw-folio-badge {
+  flex-shrink: 0;
+  background: #00236f;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* ------------------- Backup Action (Kontingensi Barang) ------------------ */
+.tw-backup {
+  margin: 16px 20px 0;
+  background: #eef2ff;
+  border: 1px solid #dfe6ff;
+  border-radius: 18px;
+  padding: 18px 16px;
+  text-align: center;
+}
+
+.tw-backup-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #00236f;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px -8px rgba(0, 35, 111, 0.7);
+  margin-bottom: 10px;
+}
+
+.tw-backup-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #1a1b21;
+  margin: 0 0 7px;
+}
+
+.tw-backup-desc {
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #444651;
+  margin: 0 0 14px;
+}
+
+.tw-backup-btn {
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #ffffff;
+  color: #00236f;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 13px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-shadow: 0 10px 22px -12px rgba(0, 35, 111, 0.5);
+}
+
+.tw-backup-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------------------- Layanan Pelanggan 24 Jam ------------------------- */
+.tw-services {
+  margin: 16px 20px 0;
+  background: #ffffff;
+  border: 1px solid #e3e1ec;
+  border-radius: 18px;
+  padding: 18px 16px;
+  text-align: center;
+  box-shadow: 0 6px 16px -12px rgba(0, 35, 111, 0.35);
+}
+
+.tw-services-badge {
+  display: inline-flex;
+  background: rgba(0, 35, 111, 0.09);
+  color: #00236f;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.tw-services-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1b21;
+  letter-spacing: -0.3px;
+  margin: 0 0 6px;
+}
+
+.tw-services-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #444651;
+  margin: 0 0 14px;
+}
+
+.tw-contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tw-contact-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 13px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tw-contact-phone {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tw-contact-phone:hover {
+  background: #bfdbfe;
+}
+
+.tw-contact-wa {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 10px 18px -10px rgba(22, 163, 74, 0.7);
+}
+
+.tw-contact-wa:hover {
+  background: #15803d;
+}
+
+.tw-contact-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.35;
+}
+
+.tw-contact-sub {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* ----------------------------- Footer Branding --------------------------- */
+.tw-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  padding: 20px 20px 28px;
+}
+
+.tw-brand-line {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #8a8b9a;
+}
+
+/* ------------------------------- Responsive ------------------------------ */
+@media (min-width: 480px) {
+  .tw-page {
+    padding: 20px 0;
+  }
+
+  .tw-frame {
+    border-radius: 22px;
+    min-height: auto;
+    box-shadow: 0 20px 50px -24px rgba(0, 35, 111, 0.35);
+    margin: 0 auto;
+  }
+}

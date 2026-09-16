@@ -1,0 +1,228 @@
+/* User Dashboard Placeholder View Styles (User Portal) */
+:root {
+  --ud-blue: #00236f;
+  --ud-accent: #fea619;
+  --ud-accent-hover: #e89510;
+  --ud-input: #f4f3fa;
+  --ud-text: #1a1b21;
+  --ud-muted: #444651;
+  --ud-border: #e3e1e9;
+}
+
+.user-dashboard-page {
+  min-height: 100vh;
+  width: 100%;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.user-dashboard-frame {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  box-shadow: 0 0 60px rgba(0, 20, 80, 0.10);
+}
+
+/* ---------- Header ---------- */
+.ud-header {
+  position: relative;
+  background: linear-gradient(160deg, #0b2f8a 0%, var(--ud-blue) 55%, #001a57 100%);
+  padding: 30px 26px 54px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ud-header::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(254, 166, 25, 0.30) 0%, transparent 65%);
+  filter: blur(24px);
+}
+
+.ud-header-inner {
+  position: relative;
+  z-index: 2;
+}
+
+.ud-logo {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.ud-logo .ud-logo-it {
+  color: var(--ud-accent);
+}
+
+.ud-title {
+  margin-top: 18px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.ud-subtitle {
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.80);
+  line-height: 1.5;
+}
+
+/* ---------- Placeholder Body ---------- */
+.ud-body {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 30px 30px 0 0;
+  margin-top: -24px;
+  position: relative;
+  z-index: 5;
+  padding: 30px 26px 26px;
+  box-shadow: 0 -14px 40px -12px rgba(0, 15, 60, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.ud-section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ud-text);
+  margin: 0 0 14px;
+}
+
+.ud-card {
+  background: var(--ud-input);
+  border: 1px solid var(--ud-border);
+  border-radius: 16px;
+  padding: 18px 18px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ud-card-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: #ffffff;
+  border: 1px solid var(--ud-border);
+  color: var(--ud-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ud-card-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ud-text);
+}
+
+.ud-card-sub {
+  font-size: 12px;
+  color: var(--ud-muted);
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+.ud-placeholder-note {
+  font-size: 12px;
+  color: var(--ud-muted);
+  background: #fff7e8;
+  border: 1px solid #f5e2bb;
+  border-radius: 12px;
+  padding: 11px 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* ---------- Actions ---------- */
+.ud-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ud-primary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ud-accent);
+  color: #1d1400;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 15px 22px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -6px rgba(254, 166, 25, 0.55);
+  transition: all 0.2s ease;
+}
+
+.ud-primary-btn:hover {
+  background: var(--ud-accent-hover);
+  transform: translateY(-1px);
+}
+
+.ud-secondary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid var(--ud-border);
+  color: var(--ud-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ud-secondary-btn:hover {
+  background: var(--ud-input);
+}
+
+.ud-logout-btn {
+  margin: 18px auto 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--ud-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px 14px;
+  transition: color 0.2s ease;
+}
+
+.ud-logout-btn:hover {
+  color: var(--ud-primary);
+}

@@ -1,0 +1,450 @@
+/* User Onboarding View Styles (User Portal) */
+:root {
+  --uob-blue: #00236f;
+  --uob-blue-light: #1b3f9e;
+  --uob-accent: #fea619;
+  --uob-accent-hover: #e89510;
+  --uob-card: #ffffff;
+  --uob-input: #f4f3fa;
+  --uob-text: #1a1b21;
+  --uob-muted: #444651;
+  --uob-border: #e3e1e9;
+}
+
+.user-onboarding-page {
+  min-height: 100vh;
+  width: 100%;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.onboarding-frame {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--uob-card);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0, 20, 80, 0.10);
+}
+
+/* ---------- Top Bar ---------- */
+.onboarding-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.ob-topbar-spacer {
+  width: 46px;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.onboarding-topbar .logo-img {
+  height: 32px;
+  width: auto;
+}
+
+.ob-top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+
+.ob-top-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--uob-accent);
+  box-shadow: 0 0 8px rgba(254, 166, 25, 0.9);
+}
+
+.ob-skip-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: opacity 0.15s;
+}
+
+.ob-skip-btn:hover {
+  opacity: 0.75;
+}
+
+/* ---------- Slider Container ---------- */
+.ob-slider {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ob-slider.dragging {
+  cursor: grabbing;
+}
+
+.ob-slider-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s ease-in-out;
+  will-change: transform;
+}
+
+.ob-slider-track.dragging {
+  transition: none;
+}
+
+/* Each slide is a full-width unit that carries hero + content as one */
+.ob-slide {
+  width: 100%;
+  flex-shrink: 0;
+  min-width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Slide Hero ---------- */
+.ob-slide-hero {
+  position: relative;
+  flex-shrink: 0;
+  min-height: 300px;
+  background: linear-gradient(160deg, #0b2f8a 0%, var(--uob-blue) 52%, #001a57 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 86px 20px 36px;
+}
+
+.ob-slide-hero::before {
+  content: '';
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(254, 166, 25, 0.30) 0%, transparent 65%);
+  filter: blur(30px);
+}
+
+.ob-slide-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -140px;
+  left: -120px;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, transparent 65%);
+  filter: blur(34px);
+}
+
+/* Decorative grid dots */
+.ob-hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.5;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 75%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 75%);
+}
+
+/* Per-slide top pill (sits inside the hero, slides with the unit) */
+.ob-hero-badge {
+  position: absolute;
+  top: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
+/* Hero illustration image */
+.ob-hero-illustration {
+  position: relative;
+  z-index: 2;
+  max-width: 280px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+/* ---------- Slide Content (white card) ---------- */
+.ob-slide-content {
+  flex: 1;
+  min-height: 0;
+  background: var(--uob-card);
+  border-radius: 32px 32px 0 0;
+  margin-top: -24px;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 30px 26px 12px;
+  overflow-y: auto;
+  box-shadow: 0 -14px 40px -12px rgba(0, 15, 60, 0.18);
+}
+
+.ob-slide-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  gap: 6px;
+  background: #eef2ff;
+  border: 1px solid #dbe3ff;
+  color: #2337a8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+
+.ob-slide-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--uob-text);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+
+.ob-slide-subtitle {
+  font-size: 14px;
+  color: var(--uob-muted);
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+/* Mini info card (Slide 2) */
+.ob-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--uob-input);
+  border: 1px solid var(--uob-border);
+  border-radius: 14px;
+  padding: 13px 16px;
+  margin: 0 auto 20px;
+  max-width: 320px;
+  text-align: left;
+}
+
+.ob-mini-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #e3e9ff;
+  color: var(--uob-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ob-mini-card-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--uob-text);
+  line-height: 1.4;
+}
+
+/* ---------- Navigation buttons ---------- */
+.ob-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+  margin-top: auto;
+}
+
+.ob-back-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--uob-border);
+  background: #ffffff;
+  color: var(--uob-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ob-back-btn:hover {
+  background: var(--uob-input);
+}
+
+.ob-primary-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--uob-accent);
+  color: #1d1400;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 15px 22px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px -6px rgba(254, 166, 25, 0.55);
+  transition: all 0.2s ease;
+}
+
+.ob-primary-btn:hover {
+  background: var(--uob-accent-hover);
+  transform: translateY(-1px);
+}
+
+.ob-primary-btn .ob-btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+.ob-primary-btn:hover .ob-btn-arrow {
+  transform: translateX(4px);
+}
+
+.ob-swipe-hint {
+  margin: 16px 0 2px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #9897a6;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+
+.ob-login-link {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--uob-muted);
+  text-align: center;
+}
+
+.ob-login-link button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--uob-blue);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ob-login-link button:hover {
+  color: var(--uob-accent-hover);
+}
+
+/* Footer badges (Slide 3) */
+.ob-footer-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--uob-border);
+}
+
+.ob-footer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--uob-muted);
+  background: var(--uob-input);
+  border: 1px solid var(--uob-border);
+  border-radius: 999px;
+  padding: 6px 11px;
+}
+
+/* ---------- Dots indicator ---------- */
+.ob-dots {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 0 16px;
+  background: var(--uob-card);
+  flex-shrink: 0;
+}
+
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d7d5e2;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.ob-dot:hover {
+  background: #b9b6c9;
+}
+
+.ob-dot.active {
+  width: 26px;
+  border-radius: 999px;
+  background: var(--uob-accent);
+}
