@@ -1,4 +1,49 @@
 /**
+ * Canonical match statuses acting as the Single Source of Truth
+ */
+export const MATCH_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  COMPLETED: 'completed'
+};
+
+export const TICKET_STATUS_MAP = {
+  pending: 'Menunggu Verifikasi',
+  approved: 'Terverifikasi',
+  rejected: 'Menunggu Verifikasi',
+  completed: 'Selesai Handover'
+};
+
+export const FOUND_ITEM_STATUS_MAP = {
+  pending: 'Di Brankas FO',
+  approved: 'Dalam Proses',
+  rejected: 'Di Brankas FO',
+  completed: 'Sudah Diambil'
+};
+
+export const TICKET_TO_MATCH_STATUS = {
+  'Menunggu Verifikasi': 'pending',
+  'Terverifikasi': 'approved',
+  'Selesai Handover': 'completed',
+  'Ditolak': 'rejected',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  completed: 'completed'
+};
+
+export const ITEM_TO_MATCH_STATUS = {
+  'Di Brankas FO': 'pending',
+  'Dalam Proses': 'approved',
+  'Sudah Diambil': 'completed',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  completed: 'completed'
+};
+
+/**
  * Model: MatchModel
  * Represents the `matches` table in database `u278523899_findit`
  */
@@ -7,7 +52,7 @@ export class MatchModel {
     id = null,
     lost_report_id = null,
     found_report_id = null,
-    status = 'pending', // 'pending' | 'approved' | 'rejected' | 'completed'
+    status = MATCH_STATUS.PENDING, // 'pending' | 'approved' | 'rejected' | 'completed'
     verified_by = null,
     handover_method = null,
     contact_shared_at = null,
@@ -28,11 +73,27 @@ export class MatchModel {
   }
 
   isPending() {
-    return this.status === 'pending';
+    return this.status === MATCH_STATUS.PENDING;
   }
 
   isApproved() {
-    return this.status === 'approved';
+    return this.status === MATCH_STATUS.APPROVED;
+  }
+
+  isCompleted() {
+    return this.status === MATCH_STATUS.COMPLETED;
+  }
+
+  isRejected() {
+    return this.status === MATCH_STATUS.REJECTED;
+  }
+
+  getTicketStatusLabel() {
+    return TICKET_STATUS_MAP[this.status] || 'Menunggu Verifikasi';
+  }
+
+  getFoundItemStatusLabel() {
+    return FOUND_ITEM_STATUS_MAP[this.status] || 'Di Brankas FO';
   }
 }
 

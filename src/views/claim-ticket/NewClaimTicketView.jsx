@@ -5,7 +5,8 @@ import {
   PlusCircle, 
   Layers, 
   ShieldCheck, 
-  Inbox 
+  Inbox,
+  ArrowLeft
 } from 'lucide-react';
 import useClaimTicketController from '../../controllers/useClaimTicketController';
 import Sidebar from '../dashboard/components/Sidebar';
@@ -21,7 +22,7 @@ import './NewClaimTicketView.css';
  * Clean MVC View rendering the official Grand Melia New Claim Ticket intake screen.
  * Uses FindIt's signature royal blue navigation sidebar and Figma color tokens.
  */
-export function NewClaimTicketView({ onLogout, onNavChange }) {
+export function NewClaimTicketView({ onLogout, onNavChange, activeNav = 'Tiket Klaim' }) {
   const {
     formData,
     categories,
@@ -61,7 +62,7 @@ export function NewClaimTicketView({ onLogout, onNavChange }) {
     <div className="claim-app-layout">
       {/* 1. Left Sidebar Navigation (Royal Blue with Active Indicator) */}
       <Sidebar
-        activeNav="Buat Laporan Tamu"
+        activeNav={activeNav}
         onNavChange={handleNav}
         onLogout={onLogout}
       />
@@ -77,6 +78,31 @@ export function NewClaimTicketView({ onLogout, onNavChange }) {
             {/* Header / Title Section */}
             <div className="claim-page-header">
               <div className="claim-header-titles">
+                {/* Back to Ticket List Button */}
+                <button
+                  type="button"
+                  className="btn-back-to-tickets"
+                  onClick={() => handleNav('Tiket Klaim')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#1e3a8a',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    marginBottom: '10px',
+                    width: 'fit-content'
+                  }}
+                >
+                  <ArrowLeft size={14} />
+                  <span>Kembali ke Verifikasi</span>
+                </button>
+
                 {/* Source & Ticket Breadcrumb */}
                 <div className="claim-breadcrumb-row">
                   <div className="source-tag-blue">
@@ -85,7 +111,7 @@ export function NewClaimTicketView({ onLogout, onNavChange }) {
                   </div>
                   <span className="breadcrumb-divider">/</span>
                   <span className="ticket-id-breadcrumb">
-                    Tiket Baru {formData.ticketNumber}
+                    Laporan Barang Baru {formData.ticketNumber}
                   </span>
                 </div>
 
@@ -96,7 +122,7 @@ export function NewClaimTicketView({ onLogout, onNavChange }) {
 
                 {/* Subheading */}
                 <p className="claim-subheading">
-                  Input tiket laporan kehilangan dari telepon tamu / front desk inquiry secara akurat untuk mempermudah pelacakan tim Housekeeping.
+                  Input laporan kehilangan barang dari telepon tamu / front desk inquiry secara akurat untuk mempermudah pelacakan tim Housekeeping.
                 </p>
               </div>
 
@@ -154,7 +180,7 @@ export function NewClaimTicketView({ onLogout, onNavChange }) {
                   disabled={isSubmitting}
                 >
                   <Bookmark size={15} />
-                  <span>Simpan Draf Tiket</span>
+                  <span>Simpan Draf Laporan</span>
                 </button>
               </div>
 
@@ -165,7 +191,7 @@ export function NewClaimTicketView({ onLogout, onNavChange }) {
                   disabled={isSubmitting}
                 >
                   <PlusCircle size={17} />
-                  <span>{isSubmitting ? 'Memproses...' : '+ Buat Tiket Klaim Sekarang'}</span>
+                  <span>{isSubmitting ? 'Memproses...' : '+ Buat Laporan Barang Sekarang'}</span>
                 </button>
               </div>
             </div>

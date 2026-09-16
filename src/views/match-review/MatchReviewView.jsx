@@ -1,93 +1,169 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRightLeft, Sparkles, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  CheckCircle2, 
+  Search, 
+  Filter, 
+  Plus, 
+  Trash2, 
+  ArrowRight, 
+  Sparkles, 
+  ShieldCheck, 
+  User, 
+  MapPin, 
+  Clock, 
+  X, 
+  Layers, 
+  Check, 
+  AlertCircle,
+  Package,
+  RotateCcw,
+  ExternalLink
+} from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
-import MatchReviewHeader from './components/MatchReviewHeader';
-import GuestClaimDetailCard from './components/GuestClaimDetailCard';
-import HousekeepingCandidatesCard from './components/HousekeepingCandidatesCard';
-import MatchReviewFooter from './components/MatchReviewFooter';
 import { StorageService } from '../../services/StorageService';
+import { MatchReviewModel } from '../../models/MatchReviewModel';
 import './MatchReviewView.css';
 
 /**
- * View Component: MatchReviewView (7. Verifikasi & Pencocokan / Match Review)
- * Modularized clean MVC View for Front Office verification.
- * Backed by StorageService for state persistence.
+ * View Component: MatchReviewView (Verifikasi & Pencocokan)
+ * Master Data Table layout mirroring the Found Items (Barang Temuan) master inventory.
+ * Displays all guest claim tickets, automatically pairs them with Housekeeping found item candidates,
+ * evaluates confidence scores, and provides an interactive inspection modal for FO verification.
  */
 export function MatchReviewView({ 
-  activeNav = 'Verifikasi & Pencocokan', 
+  activeNav = 'Verifikasi', 
   onNavChange, 
-  onLogout,
-  onProceedToHandover 
+  onLogout 
 }) {
   const [tickets, setTickets] = useState(() => StorageService.getTickets());
   const [foundItems, setFoundItems] = useState(() => StorageService.getFoundItems());
   const [searchQuery, setSearchQuery] = useState('');
-  const [roomFilter, setRoomFilter] = useState('');
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [zoomedPhotoUrl, setZoomedPhotoUrl] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [inspectingTicket, setInspectingTicket] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const [verifiedPoints, setVerifiedPoints] = useState({
-    category: true,
-    model: true,
-    color: true,
-    location: true,
-    secret: true
-  });
-
-  // Pick first pending ticket or fallback to empty
-  const activeTicket = tickets.find(t => t.status === 'Menunggu Verifikasi') || tickets[0] || {
-    id: '-',
-    guestName: '-',
-    roomNumber: '-',
-    itemName: '-',
-    category: '-',
-    color: '-',
-    locationLost: '-',
-    secretDetail: '-',
-    phone: '-',
-    email: '-',
-    status: 'Menunggu Verifikasi',
-    reportedAt: '-'
+  // Sync data listener
+  const refreshData = () => {
+    setTickets(StorageService.getTickets());
+    setFoundItems(StorageService.getFoundItems());
   };
+
+  useEffect(() => {
+    refreshData();
+    const handleUpdate = () => refreshData();
+    window.addEventListener('findit_tickets_updated', handleUpdate);
+    window.addEventListener('findit_items_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('findit_tickets_updated', handleUpdate);
+      window.removeEventListener('findit_items_updated', handleUpdate);
+    };
+  }, []);
 
   const showToast = (message, type = 'success') => {
     setToastNotification({ message, type });
-    setTimeout(() => setToastNotification(null), 3500);
-  };
-
-  const handleVerifyToggle = (key) => {
-    setVerifiedPoints(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
-  const handleMarkVerified = () => {
-    if (activeTicket?.id) {
-      StorageService.updateTicketStatus(activeTicket.id, 'Terverifikasi');
-    }
-    showToast(`Tiket ${activeTicket.id} berhasil diverifikasi! Mengalihkan ke Proses Handover...`);
     setTimeout(() => {
-      if (onProceedToHandover) {
-        onProceedToHandover();
-      } else if (onNavChange) {
-        onNavChange('Handover');
+      setToastNotification(null);
+    }, 3500);
+  };
+
+  // Pre-calculate candidate pairings for tickets
+  const ticketPairings = useMemo(() => {
+    const pairings = {};
+    tickets.forEach((t) => {
+      const candidates = MatchReviewModel.getCandidates(t.id);
+      pairings[t.id] = candidates.length > 0 ? candidates[0] : null;
+    });
+    return pairings;
+  }, [tickets, foundItems]);
+
+  // Categories list
+  const categoryOptions = useMemo(() => {
+    const cats = new Set(tickets.map((t) => t.category).filter(Boolean));
+    return ['all', ...Array.from(cats)];
+  }, [tickets]);
+
+  // Filtered tickets
+  const filteredTickets = useMemo(() => {
+    return tickets.filter((t) => {
+      const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
+      const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus;
+      const q = searchQuery.toLowerCase().trim();
+      const bestCandidate = ticketPairings[t.id];
+      const matchesSearch =
+        !q ||
+        (t.id && t.id.toLowerCase().includes(q)) ||
+        (t.guestName && t.guestName.toLowerCase().includes(q)) ||
+        (t.roomNumber && t.roomNumber.toLowerCase().includes(q)) ||
+        (t.itemName && t.itemName.toLowerCase().includes(q)) ||
+        (bestCandidate && bestCandidate.name && bestCandidate.name.toLowerCase().includes(q));
+      return matchesCategory && matchesStatus && matchesSearch;
+    });
+  }, [tickets, selectedCategory, selectedStatus, searchQuery, ticketPairings]);
+
+  // KPI counts
+  const totalCount = tickets.length;
+  const pendingCount = tickets.filter((t) => t.status === 'Menunggu Verifikasi').length;
+  const verifiedCount = tickets.filter((t) => t.status === 'Terverifikasi' || t.status === 'Selesai Handover').length;
+
+  // Actions
+  const handleDeleteTicket = (ticketId) => {
+    if (window.confirm(`Hapus laporan barang ${ticketId}?`)) {
+      StorageService.deleteTicket(ticketId);
+      showToast(`Laporan barang ${ticketId} berhasil dihapus.`, 'info');
+      refreshData();
+    }
+  };
+
+  const handleConfirmVerification = (ticket, candidate) => {
+    setActionLoading(true);
+    setTimeout(() => {
+      if (candidate?.id) {
+        StorageService.updateMatchStatus(candidate.id, 'approved', {
+          lost_report_id: ticket.id,
+          found_report_id: candidate.found_report_id || candidate.id,
+          verified_by: 'Duty Manager Front Office'
+        });
       }
-    }, 800);
+      StorageService.updateTicketStatus(ticket.id, 'Terverifikasi');
+      showToast(`Barang ${ticket.id} berhasil ditandai Terverifikasi!`, 'success');
+      setActionLoading(false);
+      setInspectingTicket(null);
+      refreshData();
+    }, 400);
   };
 
-  const handleRejectRelation = () => {
-    showToast('Relasi barang dilepas. Kandidat dikembalikan ke antrean temuan.', 'warning');
+  const handleRejectRelation = (ticket, candidate) => {
+    setActionLoading(true);
+    setTimeout(() => {
+      if (candidate?.id) {
+        StorageService.updateMatchStatus(candidate.id, 'rejected');
+      }
+      StorageService.updateTicketStatus(ticket.id, 'Menunggu Verifikasi');
+      showToast(`Kandidat barang temuan dilepaskan dari barang ${ticket.id}.`, 'info');
+      setActionLoading(false);
+      setInspectingTicket(null);
+      refreshData();
+    }, 400);
   };
 
-  const handlePostpone = () => {
-    showToast('Status diperbarui: Menunda dan meminta bukti tambahan ke tamu.', 'info');
+  const handleExportCSV = () => {
+    StorageService.exportToCSV(filteredTickets, `Laporan_Verifikasi_${Date.now()}.csv`);
   };
+
+  const handleLoadSampleData = () => {
+    StorageService.seedSampleData();
+    refreshData();
+    showToast('2 Sampel barang klaim dan barang temuan berhasil dimuat!', 'success');
+  };
+
+  // Inspecting candidate helper
+  const inspectingCandidate = inspectingTicket ? ticketPairings[inspectingTicket.id] : null;
 
   return (
-    <div className="match-review-app-layout">
+    <div className="verification-app-layout">
       {/* 1. Left Sidebar Navigation */}
       <Sidebar
         activeNav={activeNav}
@@ -96,98 +172,472 @@ export function MatchReviewView({
       />
 
       {/* 2. Main Viewport Container */}
-      <div className="match-review-viewport">
+      <div className="verification-main-viewport">
         <TopNavbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onNavChange={onNavChange}
+          onLogout={onLogout}
         />
 
-        {/* Scrollable Main Workspace */}
-        <main className="match-review-content">
-          <MatchReviewHeader
-            ticket={activeTicket}
-            onProtocolClick={() => showToast('Protokol SOP FO Double-Blind Check Aktif: Data klaim tersandi terlindungi.', 'info')}
-          />
-
-          {/* Active Mode Banner */}
-          <div className="matching-mode-banner">
-            <div className="banner-left-content">
-              <div className="banner-mode-icon-box">
-                <ArrowRightLeft size={18} className="banner-mode-icon" />
+        <main className="verification-scrollable-content">
+          {/* Header & KPI Summary Cards (Identical Layout to FoundItemsLogView) */}
+          <section className="verification-header-section">
+            <div className="verification-title-group">
+              <div className="verification-icon-box">
+                <CheckCircle2 size={24} />
               </div>
-              <div className="banner-text-group">
-                <h2 className="banner-mode-title">Mode Pencocokan Aktif</h2>
-                <p className="banner-mode-desc">
-                  Bandingkan klaim rahasia tamu dengan data fisik barang temuan housekeeping. Hindari membacakan ciri khusus ke tamu terlebih dahulu.
-                </p>
+              <div className="verification-titles">
+                <h1 className="verification-main-title">Verifikasi</h1>
+                <span className="verification-subtitle">
+                  Tabel master pencocokan klaim tamu hotel dengan inventaris fisik barang temuan housekeeping.
+                </span>
               </div>
             </div>
 
-            <div className="banner-ai-pill">
-              <Sparkles size={14} className="banner-sparkle-icon" />
-              <span>Pencocokan Ciri Khusus: Sinkronisasi 98%</span>
+            {/* KPI Cards Group */}
+            <div className="verification-kpi-cards-group">
+              <div className="verification-kpi-card blue-surface">
+                <div className="kpi-icon-square blue">
+                  <ShieldCheck size={18} />
+                </div>
+                <div className="kpi-text-stack">
+                  <span className="kpi-micro-label">TOTAL KLAIM TAMU</span>
+                  <span className="kpi-value-bold">{totalCount} Barang</span>
+                </div>
+              </div>
+
+              <div className="verification-kpi-card yellow-surface">
+                <div className="kpi-icon-square yellow">
+                  <Clock size={18} />
+                </div>
+                <div className="kpi-text-stack">
+                  <span className="kpi-micro-label">MENUNGGU VERIFIKASI</span>
+                  <span className="kpi-value-bold">{pendingCount} Barang</span>
+                </div>
+              </div>
+
+              <div className="verification-kpi-card green-surface">
+                <div className="kpi-icon-square green">
+                  <Check size={18} />
+                </div>
+                <div className="kpi-text-stack">
+                  <span className="kpi-micro-label">TERVERIFIKASI</span>
+                  <span className="kpi-value-bold">{verifiedCount} Barang</span>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* 2-Column Side-by-Side Comparison Workspace */}
-          <div className="comparison-2col-grid">
-            <GuestClaimDetailCard
-              ticket={activeTicket}
-              verifiedPoints={verifiedPoints}
-              onVerifyToggle={handleVerifyToggle}
-            />
+          {/* Search, Filter & Action Toolbar */}
+          <section className="verification-toolbar-card">
+            <div className="toolbar-top-row">
+              <div className="table-search-input-box">
+                <Search size={16} className="search-muted-icon" />
+                <input
+                  type="text"
+                  className="table-search-field"
+                  placeholder="Cari no. barang, nama tamu, kamar, barang klaim..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
 
-            <HousekeepingCandidatesCard
-              roomFilter={roomFilter}
-              onRoomFilterChange={setRoomFilter}
-              candidates={foundItems}
-              selectedCandidate={selectedCandidate}
-              onSelectCandidate={setSelectedCandidate}
-              onZoomPhoto={(url) => setZoomedPhotoUrl(url)}
-            />
-          </div>
+              <div className="toolbar-right-buttons">
+                <button
+                  type="button"
+                  className="btn-new-claim-action"
+                  onClick={() => onNavChange && onNavChange('Buat Laporan Tamu')}
+                >
+                  <Plus size={15} />
+                  <span>Buat Laporan Tamu</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Dropdowns */}
+            <div className="toolbar-filters-row">
+              <div className="filter-select-wrapper">
+                <span className="filter-label-icon">
+                  <Filter size={10} />
+                  KATEGORI BARANG
+                </span>
+                <select
+                  className="filter-native-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="all">Semua Kategori</option>
+                  {categoryOptions.filter((c) => c !== 'all').map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="filter-select-wrapper">
+                <span className="filter-label-icon">
+                  <CheckCircle2 size={10} />
+                  STATUS VERIFIKASI
+                </span>
+                <select
+                  className="filter-native-select"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
+                  <option value="Terverifikasi">Terverifikasi</option>
+                  <option value="Selesai Handover">Selesai</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* Master Verification Table */}
+          {filteredTickets.length === 0 ? (
+            <div className="claim-empty-state-card">
+              <div className="empty-icon-box">
+                <Package size={28} className="empty-ticket-icon" />
+              </div>
+              <h3 className="empty-title">Belum Ada Barang Klaim untuk Diverifikasi</h3>
+              <p className="empty-subtitle">
+                Tidak ada barang klaim yang sesuai dengan filter pencarian saat ini. Anda dapat membuat laporan baru atau memuat sampel data.
+              </p>
+              <div className="empty-actions-row">
+                <button
+                  type="button"
+                  className="btn-create-empty-amber"
+                  onClick={() => onNavChange && onNavChange('Buat Laporan Tamu')}
+                >
+                  + Buat Laporan Tamu Baru
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="master-verification-table-container">
+              <table className="master-verification-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '130px' }}>NO. BARANG</th>
+                    <th>TAMU &amp; NO. KAMAR</th>
+                    <th>BARANG DIKLAIM</th>
+                    <th>KANDIDAT TEMUAN HK</th>
+                    <th style={{ width: '150px' }}>SKOR SINKRONISASI</th>
+                    <th style={{ width: '140px' }}>WAKTU LAPOR</th>
+                    <th style={{ width: '150px' }}>STATUS</th>
+                    <th style={{ width: '170px', textAlign: 'center' }}>AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTickets.map((t) => {
+                    const candidate = ticketPairings[t.id];
+                    const isPending = t.status === 'Menunggu Verifikasi';
+                    return (
+                      <tr key={t.id} className="verification-table-row">
+                        {/* 1. No Tiket */}
+                        <td className="cell-ticket-id">
+                          <div className="ticket-id-stack">
+                            <span 
+                              className="reg-num-link"
+                              onClick={() => setInspectingTicket(t)}
+                              title="Klik untuk membuka rincian perbandingan"
+                            >
+                              {t.id}
+                            </span>
+                            {t.priority === 'VIP' && (
+                              <span className="vip-badge-small">VIP</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 2. Tamu & No Kamar */}
+                        <td className="cell-guest-info">
+                          <div className="guest-info-stack">
+                            <span className="guest-name-bold">{t.guestName || 'Tamu Anonim'}</span>
+                            <span className="guest-room-sub">
+                              Kamar {t.roomNumber || '-'} {t.roomType ? `• ${t.roomType}` : ''}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 3. Barang Diklaim */}
+                        <td className="cell-item-claimed">
+                          <div className="item-claimed-stack">
+                            <span className="item-name-bold">{t.itemName || 'Barang Berharga'}</span>
+                            <span className="item-category-sub">
+                              {t.category || '-'} {t.color ? `• ${t.color}` : ''}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 4. Kandidat Temuan HK */}
+                        <td className="cell-hk-candidate">
+                          {candidate ? (
+                            <div className="candidate-cell-flex">
+                              {candidate.photoUrl ? (
+                                <img
+                                  src={candidate.photoUrl}
+                                  alt={candidate.name}
+                                  className="candidate-mini-thumb"
+                                />
+                              ) : (
+                                <div className="candidate-icon-placeholder">
+                                  <Package size={14} />
+                                </div>
+                              )}
+                              <div className="candidate-info-stack">
+                                <span className="candidate-title">{candidate.name}</span>
+                                <span className="candidate-sub">
+                                  <MapPin size={10} /> {candidate.locationFound || candidate.storageLocation || 'HK Storage'}
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="no-candidate-hint">Belum ada temuan serupa</span>
+                          )}
+                        </td>
+
+                        {/* 5. Skor Sinkronisasi */}
+                        <td className="cell-confidence">
+                          {candidate ? (
+                            <span className={`confidence-pill-score ${candidate.confidenceScore >= 75 ? 'high' : 'medium'}`}>
+                              <Sparkles size={12} />
+                              {candidate.confidenceScore}% Cocok
+                            </span>
+                          ) : (
+                            <span className="confidence-empty">-</span>
+                          )}
+                        </td>
+
+                        {/* 6. Waktu Lapor */}
+                        <td className="cell-report-time">
+                          <span className="report-time-text">{t.reportedAt || '-'}</span>
+                        </td>
+
+                        {/* 7. Status */}
+                        <td className="cell-status">
+                          <span className={`status-pill ${isPending ? 'pending' : 'verified'}`}>
+                            <span className="status-dot" />
+                            {t.status}
+                          </span>
+                        </td>
+
+                        {/* 8. Aksi */}
+                        <td className="cell-actions" style={{ textAlign: 'center' }}>
+                          <div className="action-buttons-flex">
+                            <button
+                              type="button"
+                              className={isPending ? 'btn-table-verify' : 'btn-table-details'}
+                              onClick={() => setInspectingTicket(t)}
+                              title="Buka rincian pencocokan & SOP double-blind"
+                            >
+                              <span>{isPending ? 'Verifikasi' : 'Detail'}</span>
+                              <ArrowRight size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-table-delete"
+                              title="Hapus Laporan Barang"
+                              onClick={() => handleDeleteTicket(t.id)}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              <div className="verification-table-footer">
+                <span className="footer-count-text">
+                  Menampilkan {filteredTickets.length} dari total {tickets.length} klaim terdaftar
+                </span>
+              </div>
+            </div>
+          )}
         </main>
-
-        {/* 3. Sticky Bottom Operational Action Bar */}
-        <MatchReviewFooter
-          onRejectRelation={handleRejectRelation}
-          onPostpone={handlePostpone}
-          onMarkVerified={handleMarkVerified}
-          verifiedCount={Object.values(verifiedPoints).filter(Boolean).length}
-        />
       </div>
 
-      {/* Modal: Zoom Photo Preview */}
-      {zoomedPhotoUrl && (
-        <div className="photo-zoom-modal-backdrop" onClick={() => setZoomedPhotoUrl(null)}>
-          <div className="photo-zoom-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="zoom-modal-header">
-              <span>Foto Temuan Fisik Petugas HK</span>
+      {/* 3. Interactive Verification & Inspection Modal */}
+      {inspectingTicket && (
+        <div className="modal-backdrop" onClick={() => setInspectingTicket(null)}>
+          <div 
+            className="modal-dialog-box verification-modal-box" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="modal-top-bar">
+              <div className="modal-title-wrap">
+                <ShieldCheck size={22} className="text-blue-600" />
+                <div>
+                  <h3 className="modal-heading">
+                    Pemeriksaan Ciri Khusus: {inspectingTicket.id}
+                  </h3>
+                  <span className="modal-sub-heading">
+                    SOP FO Double-Blind Check • Tamu: {inspectingTicket.guestName} (Kamar {inspectingTicket.roomNumber})
+                  </span>
+                </div>
+              </div>
               <button 
                 type="button" 
-                className="zoom-modal-close"
-                onClick={() => setZoomedPhotoUrl(null)}
+                className="modal-close-icon-btn" 
+                onClick={() => setInspectingTicket(null)}
               >
                 <X size={18} />
               </button>
             </div>
-            <img 
-              src={zoomedPhotoUrl} 
-              alt="Detail Barang Temuan" 
-              className="zoomed-modal-img"
-            />
+
+            {/* Modal Body: Side-by-Side Comparison */}
+            <div className="verification-modal-body">
+              {/* Left Side: Guest Claim Confidential */}
+              <div className="modal-compare-card guest-side">
+                <div className="card-side-tag">1. LAPORAN KLAIM TAMU (CONFIDENTIAL)</div>
+                <h4 className="compare-item-title">{inspectingTicket.itemName}</h4>
+
+                <div className="compare-meta-grid">
+                  <div className="compare-meta-item">
+                    <span className="meta-label">Nama Tamu</span>
+                    <span className="meta-value bold">{inspectingTicket.guestName}</span>
+                  </div>
+                  <div className="compare-meta-item">
+                    <span className="meta-label">Nomor Kamar</span>
+                    <span className="meta-value">Kamar {inspectingTicket.roomNumber}</span>
+                  </div>
+                  <div className="compare-meta-item">
+                    <span className="meta-label">Kategori</span>
+                    <span className="meta-value">{inspectingTicket.category || '-'}</span>
+                  </div>
+                  <div className="compare-meta-item">
+                    <span className="meta-label">Warna Utama</span>
+                    <span className="meta-value">{inspectingTicket.color || '-'}</span>
+                  </div>
+                </div>
+
+                <div className="confidential-feature-box">
+                  <span className="feature-label">Ciri Rahasia / Deskripsi Tambahan Tamu:</span>
+                  <p className="feature-text">
+                    {inspectingTicket.secretDetail || inspectingTicket.specialFeatures || inspectingTicket.description || 'Tidak ada deskripsi rahasia tertulis.'}
+                  </p>
+                </div>
+
+                <div className="location-meta-row">
+                  <MapPin size={12} />
+                  <span>Lokasi Hilang: {inspectingTicket.locationLost || 'Area kamar'}</span>
+                </div>
+              </div>
+
+              {/* Right Side: HK Found Item Candidate */}
+              <div className="modal-compare-card hk-side">
+                <div className="card-side-tag green">2. BARANG FISIK TEMUAN HOUSEKEEPING</div>
+                {inspectingCandidate ? (
+                  <>
+                    <div className="hk-candidate-header">
+                      {inspectingCandidate.photoUrl ? (
+                        <img 
+                          src={inspectingCandidate.photoUrl} 
+                          alt={inspectingCandidate.name} 
+                          className="hk-candidate-img-frame"
+                        />
+                      ) : (
+                        <div className="hk-no-photo-box">
+                          <Package size={24} />
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="compare-item-title">{inspectingCandidate.name}</h4>
+                        <span className="confidence-pill-score high">
+                          <Sparkles size={11} /> {inspectingCandidate.confidenceScore || 95}% Kecocokan AI
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="compare-meta-grid">
+                      <div className="compare-meta-item">
+                        <span className="meta-label">Petugas Penemu</span>
+                        <span className="meta-value bold">{inspectingCandidate.finderName || 'Staf Housekeeping'}</span>
+                      </div>
+                      <div className="compare-meta-item">
+                        <span className="meta-label">Lokasi Ditemukan</span>
+                        <span className="meta-value">{inspectingCandidate.locationFound || `Kamar ${inspectingCandidate.roomNumber}`}</span>
+                      </div>
+                      <div className="compare-meta-item">
+                        <span className="meta-label">Lokasi Simpan</span>
+                        <span className="meta-value">{inspectingCandidate.storageLocation || 'Brankas FO'}</span>
+                      </div>
+                      <div className="compare-meta-item">
+                        <span className="meta-label">Waktu Temu</span>
+                        <span className="meta-value">{inspectingCandidate.foundAt || '-'}</span>
+                      </div>
+                    </div>
+
+                    <div className="confidential-feature-box hk">
+                      <span className="feature-label">Deskripsi Fisik Lapangan HK:</span>
+                      <p className="feature-text">
+                        {inspectingCandidate.description || inspectingCandidate.notes || 'Barang dalam kondisi baik tersimpan aman di loker.'}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-hk-match-state">
+                    <AlertCircle size={28} className="text-amber-500" />
+                    <h4>Belum Ada Barang Temuan Serupa</h4>
+                    <p>
+                      Sistem belum menemukan barang temuan dari Housekeeping yang memiliki kemiripan kategori atau nomor kamar yang cocok.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal SOP Check Notice */}
+            <div className="modal-sop-banner">
+              <ShieldCheck size={16} />
+              <span>
+                <strong>Protokol SOP Front Office:</strong> Pastikan minimal 3 poin verifikasi rahasia (warna, ciri khusus, isi/seri) telah dikonfirmasi oleh tamu sebelum menandai status Terverifikasi.
+              </span>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="modal-actions-bar">
+              <button 
+                type="button" 
+                className="btn-cancel-modal" 
+                onClick={() => setInspectingTicket(null)}
+              >
+                Tutup
+              </button>
+
+              {inspectingCandidate && (
+                <button
+                  type="button"
+                  className="btn-reject-relation"
+                  onClick={() => handleRejectRelation(inspectingTicket, inspectingCandidate)}
+                  disabled={actionLoading}
+                >
+                  Lepas Relasi / Tidak Cocok
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="btn-confirm-match-gold"
+                onClick={() => handleConfirmVerification(inspectingTicket, inspectingCandidate)}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Memproses...' : 'Tandai Terverifikasi'}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Toast Notification */}
       {toastNotification && (
-        <div className={`operational-toast-pill ${toastNotification.type}`}>
-          {toastNotification.type === 'warning' ? (
-            <AlertTriangle size={16} />
-          ) : (
-            <CheckCircle2 size={16} />
-          )}
+        <div className={`verification-toast-pill ${toastNotification.type}`}>
+          <CheckCircle2 size={16} />
           <span>{toastNotification.message}</span>
         </div>
       )}

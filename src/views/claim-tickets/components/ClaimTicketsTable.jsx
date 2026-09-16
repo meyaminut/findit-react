@@ -31,13 +31,6 @@ export function ClaimTicketsTable({
           >
             + Buat Laporan Tamu Sekarang
           </button>
-          <button
-            type="button"
-            className="btn-seed-sample"
-            onClick={onLoadSampleData}
-          >
-            Muat 2 Sampel Uji Coba
-          </button>
         </div>
       </div>
     );

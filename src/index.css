@@ -87,4 +87,58 @@ html, body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
+/* Operational Hub Workflow Tabs */
+.hub-workflow-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  background: #ffffff;
+  padding: 5px;
+  border-radius: 10px;
+  border: 1px solid var(--border-clean);
+  width: fit-content;
+}
+
+.hub-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hub-tab-btn:hover {
+  background: #f1f5f9;
+  color: var(--text-heading);
+}
+
+.hub-tab-btn.active {
+  background: var(--navy-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 22, 78, 0.15);
+}
+
+.hub-tab-badge {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.hub-tab-btn.active .hub-tab-badge {
+  background: var(--amber-gold);
+  color: #00164e;
+  font-weight: 700;
+}
+
 

@@ -14,7 +14,7 @@ import './PostCheckoutSurveyView.css';
  * Modularized, clean architecture for post-checkout guest communication.
  */
 export function PostCheckoutSurveyView({
-  activeNav = 'Survei Pasca-Checkout',
+  activeNav = 'Follow-up Checkout',
   onNavChange,
   onLogout
 }) {
@@ -38,7 +38,7 @@ export function PostCheckoutSurveyView({
 
   const handleReviewMatch = () => {
     if (onNavChange) {
-      onNavChange('Verifikasi & Pencocokan');
+      onNavChange('Verifikasi & Serah Terima');
     }
   };
 

@@ -49,10 +49,6 @@ export class ClaimTicketModel {
       'Wastafel'
     ];
   }
-
-  static getAutoMatchCandidate() {
-    return null;
-  }
 }
 
 export default ClaimTicketModel;

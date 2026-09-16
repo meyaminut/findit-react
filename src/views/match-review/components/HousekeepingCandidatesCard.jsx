@@ -104,11 +104,23 @@ export function HousekeepingCandidatesCard({
               {/* Match Verification Score */}
               <div className="ai-score-card">
                 <div className="score-circle">
-                  <span className="score-number">98%</span>
+                  <span className="score-number">
+                    {primaryItem.confidenceScore != null ? `${primaryItem.confidenceScore}%` : (primaryItem.score != null ? `${primaryItem.score}%` : '98%')}
+                  </span>
                 </div>
                 <div className="score-text">
-                  <span className="score-title">Tingkat Kesesuaian Fisik Sangat Tinggi</span>
-                  <span className="score-desc">Kamar, Kategori, Model &amp; Ciri Khusus Sinkron</span>
+                  <span className="score-title">
+                    {(primaryItem.confidenceScore || 98) >= 80 
+                      ? 'Tingkat Kesesuaian Fisik Sangat Tinggi' 
+                      : (primaryItem.confidenceScore || 98) >= 50 
+                        ? 'Tingkat Kesesuaian Sedang' 
+                        : 'Tingkat Kesesuaian Rendah'}
+                  </span>
+                  <span className="score-desc">
+                    {primaryItem.aiBreakdown?.featureSimilarity?.desc 
+                      ? `${primaryItem.aiBreakdown.featureSimilarity.desc} • ${primaryItem.aiBreakdown.locationProximity?.desc || ''}`
+                      : 'Kamar, Kategori, Model & Ciri Khusus Sinkron'}
+                  </span>
                 </div>
               </div>
 

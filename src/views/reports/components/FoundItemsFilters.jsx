@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Download, Plus, DoorClosed, Layers, CheckSquare } from 'lucide-react';
+import { Search, Plus, DoorClosed, Layers, CheckSquare } from 'lucide-react';
 
 /**
  * View Component: FoundItemsFilters
@@ -46,15 +46,6 @@ export function FoundItemsFilters({
         </div>
 
         <div className="toolbar-action-buttons">
-          <button
-            type="button"
-            className="btn-export-outline"
-            onClick={onExportCSV}
-          >
-            <Download size={14} />
-            <span>Export CSV</span>
-          </button>
-
           <button
             type="button"
             className="btn-add-found-amber"

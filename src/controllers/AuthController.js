@@ -1,13 +1,15 @@
 import { UserModel } from '../models/UserModel';
+import ApiService from '../services/ApiService';
 
 /**
  * Controller: AuthController
  * Handles authentication business logic, session validation, and password resets
- * interacting directly with UserModel and data persistence.
+ * interacting directly with the live API and falling back to local UserModel seed data.
  */
 export class AuthController {
   /**
-   * Authenticate user credentials against database records
+   * Authenticate user credentials against the live API backend.
+   * Falls back to local seed users if the API is unreachable.
    * @param {string} email 
    * @param {string} password 
    * @param {boolean} rememberSession 
@@ -22,12 +24,47 @@ export class AuthController {
       return { success: false, error: 'Password is required.' };
     }
 
-    // Simulate network delay / hashing check
-    await new Promise((resolve) => setTimeout(resolve, 750));
-
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check seed users or internal admin domain
+    // ───── Attempt Live API Login ─────
+    try {
+      const result = await ApiService.login(normalizedEmail, password);
+      
+      if (result?.data?.token) {
+        const apiUser = result.data.user || result.data;
+        const user = new UserModel({
+          id: apiUser.id || apiUser.ID || 99,
+          name: apiUser.name || 'Admin',
+          email: apiUser.email || normalizedEmail,
+          role: apiUser.role || 'admin',
+          email_verified_at: apiUser.email_verified_at || new Date().toISOString()
+        });
+
+        // Store remember token if requested
+        if (rememberSession) {
+          try { localStorage.setItem('findit_admin_remember', normalizedEmail); } catch {}
+        } else {
+          try { localStorage.removeItem('findit_admin_remember'); } catch {}
+        }
+
+        return { success: true, user };
+      }
+    } catch (apiErr) {
+      console.warn('[AuthController] API login failed, trying local fallback:', apiErr.message);
+      
+      // If the error has a status (server responded), it's a real auth failure
+      if (apiErr.status && apiErr.status >= 400 && apiErr.status < 500) {
+        return {
+          success: false,
+          error: apiErr.message || 'Invalid credentials. Please check your email and password.'
+        };
+      }
+      // Otherwise (network error), fall through to local seed users
+    }
+
+    // ───── Fallback: Local Seed Users ─────
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     const seedUsers = UserModel.getSeedUsers();
     let matchedUser = seedUsers.find(
       (u) => u.email.toLowerCase() === normalizedEmail
@@ -65,21 +102,12 @@ export class AuthController {
 
     // Store remember token if requested
     if (rememberSession) {
-      try {
-        localStorage.setItem('findit_admin_remember', normalizedEmail);
-      } catch (err) {
-        console.warn('LocalStorage not available', err);
-      }
+      try { localStorage.setItem('findit_admin_remember', normalizedEmail); } catch {}
     } else {
-      try {
-        localStorage.removeItem('findit_admin_remember');
-      } catch (err) {}
+      try { localStorage.removeItem('findit_admin_remember'); } catch {}
     }
 
-    return {
-      success: true,
-      user: matchedUser
-    };
+    return { success: true, user: matchedUser };
   }
 
   /**
@@ -101,9 +129,11 @@ export class AuthController {
   }
 
   /**
-   * Clear active session
+   * Clear active session (API + local)
    */
   static logout() {
+    ApiService.logout();
+    try { localStorage.removeItem('findit_admin_remember'); } catch {}
     return { success: true };
   }
 }

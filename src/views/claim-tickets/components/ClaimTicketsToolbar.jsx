@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Download, Plus, Filter } from 'lucide-react';
+import { Search, Plus, Filter } from 'lucide-react';
 
 /**
  * View Component: ClaimTicketsToolbar
@@ -30,7 +30,7 @@ export function ClaimTicketsToolbar({
           <input
             type="text"
             className="claim-search-input"
-            placeholder="Cari No. Tiket (#TK-...), nama tamu, nomor kamar, atau nama barang..."
+            placeholder="Cari No. Barang (#TK-...), nama tamu, nomor kamar, atau nama barang..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
@@ -39,21 +39,11 @@ export function ClaimTicketsToolbar({
         <div className="claim-actions-group">
           <button
             type="button"
-            className="btn-export-clean"
-            onClick={onExportCSV}
-            title="Ekspor daftar tiket ke file CSV"
-          >
-            <Download size={14} />
-            <span>Ekspor CSV</span>
-          </button>
-
-          <button
-            type="button"
             className="btn-add-ticket-amber"
             onClick={onNewClaim}
           >
             <Plus size={15} />
-            <span>+ Buat Tiket Klaim Baru</span>
+            <span>+ Buat Laporan Barang Baru</span>
           </button>
         </div>
       </div>

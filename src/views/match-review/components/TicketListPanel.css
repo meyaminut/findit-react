@@ -1,0 +1,359 @@
+/* =========================================================
+   TicketListPanel Stylesheet (Gmail-Style Split Pane)
+   Width: 340px fixed, internal independent scroll
+   ========================================================= */
+
+.ticket-list-panel {
+  width: 340px;
+  min-width: 320px;
+  max-width: 360px;
+  height: 100%;
+  background: #FFFFFF;
+  border-right: 1px solid #E3E1E9;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  transition: width 0.25s ease, transform 0.25s ease;
+}
+
+/* Panel Header */
+.ticket-list-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F1F1F5;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.ticket-list-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-list-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ticket-list-heading {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #00164E;
+  margin: 0;
+}
+
+.ticket-list-count-badge {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+.ticket-list-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-new-claim-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #FEA619;
+  color: #00164E;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-new-claim-compact:hover {
+  background: #E59516;
+  transform: translateY(-1px);
+}
+
+.btn-panel-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-panel-toggle:hover {
+  background: #E2E8F0;
+  color: #00164E;
+}
+
+/* Compact Search Box */
+.ticket-list-search-box {
+  position: relative;
+  width: 100%;
+}
+
+.ticket-list-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94A3B8;
+  pointer-events: none;
+}
+
+.ticket-list-search-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #0F172A;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.ticket-list-search-input:focus {
+  background: #FFFFFF;
+  border-color: #1D4ED8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.12);
+}
+
+/* Compact Filter Pills */
+.ticket-list-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.ticket-list-filter-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pill-btn {
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  background: #F1F5F9;
+  color: #64748B;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.filter-pill-btn:hover {
+  background: #E2E8F0;
+  color: #334155;
+}
+
+.filter-pill-btn.active {
+  background: #00164E;
+  color: #FFFFFF;
+  border-color: #00164E;
+}
+
+/* Scrollable Ticket List Area */
+.ticket-list-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #FAF8FF;
+}
+
+/* Ticket List Item Card */
+.ticket-list-card {
+  background: #FFFFFF;
+  border: 1px solid #E3E1E9;
+  border-radius: 9px;
+  padding: 11px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: all 0.15s ease;
+  position: relative;
+  text-align: left;
+}
+
+.ticket-list-card:hover {
+  border-color: #CBD5E1;
+  background: #F8FAFC;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 22, 78, 0.04);
+}
+
+/* Active Highlight (Gmail-style) */
+.ticket-list-card.active {
+  background: #EEF2FF;
+  border-color: #C7D2FE;
+  border-left: 4px solid #1D4ED8;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.08);
+}
+
+.card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-card-id {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1D4ED8;
+  background: #EFF6FF;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.ticket-list-card.active .ticket-card-id {
+  background: #DBEAFE;
+}
+
+.ticket-card-time {
+  font-size: 10.5px;
+  color: #94A3B8;
+}
+
+.card-guest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ticket-card-guest {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-card-room {
+  font-size: 11px;
+  color: #64748B;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.card-item-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-card-item-title {
+  font-weight: 700;
+  color: #1E293B;
+}
+
+.ticket-card-item-sub {
+  color: #64748B;
+}
+
+.card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 5px;
+  border-top: 1px solid #F1F5F9;
+}
+
+/* Compact Status Pills */
+.ticket-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.status-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-chip-amber {
+  background: #FEF3C7;
+  color: #92400E;
+}
+.status-chip-amber .status-chip-dot {
+  background: #D97706;
+}
+
+.status-chip-blue {
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+.status-chip-blue .status-chip-dot {
+  background: #2563EB;
+}
+
+.status-chip-green {
+  background: #DCFCE7;
+  color: #166534;
+}
+.status-chip-green .status-chip-dot {
+  background: #16A34A;
+}
+
+.vip-tag-mini {
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid #FDE68A;
+}
+
+.ticket-list-empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: #64748B;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
