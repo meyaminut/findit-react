@@ -6,7 +6,7 @@ import {
   FilePlus2, 
   CheckCircle2, 
   ClipboardCheck, 
-  MessageSquareHeart, 
+  FileText, 
   LogOut,
   Building2,
   Users
@@ -21,13 +21,46 @@ import Logo from '../../components/Logo';
 export function Sidebar({ activeNav = 'Dashboard', onNavChange, onLogout }) {
   const menuItems = [
     { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'Tiket Klaim', label: 'Tiket Klaim', icon: Ticket },
+    { id: 'Verifikasi', label: 'Verifikasi', icon: CheckCircle2 },
     { id: 'Barang Temuan', label: 'Barang Temuan', icon: Package },
-    { id: 'Buat Laporan Tamu', label: 'Buat Laporan Tamu', icon: FilePlus2 },
-    { id: 'Verifikasi & Pencocokan', label: 'Verifikasi & Pencocokan', icon: CheckCircle2 },
-    { id: 'Handover', label: 'Handover', icon: ClipboardCheck },
-    { id: 'Survei Pasca-Checkout', label: 'Survei Pasca-Checkout', icon: MessageSquareHeart },
+    { id: 'Laporan', label: 'Laporan', icon: FileText },
   ];
+
+  const isItemActive = (itemId) => {
+    if (itemId === 'Verifikasi') {
+      return (
+        activeNav === 'Verifikasi' ||
+        activeNav === 'Verifikasi & Pencocokan' ||
+        activeNav === 'Klaim & Serah Terima' ||
+        activeNav === 'Verifikasi & Serah Terima' ||
+        activeNav === 'Tiket Klaim' ||
+        activeNav === 'Tiket Klaim Tamu' ||
+        activeNav === 'claim-tickets' ||
+        activeNav === 'Match Review' ||
+        activeNav === 'Handover' ||
+        activeNav === 'match-review' ||
+        activeNav === 'handover' ||
+        activeNav === 'verification'
+      );
+    }
+    if (itemId === 'Barang Temuan') {
+      return (
+        activeNav === 'Barang Temuan' ||
+        activeNav === 'All Reports' ||
+        activeNav === 'all-reports'
+      );
+    }
+    if (itemId === 'Laporan') {
+      return (
+        activeNav === 'Laporan' ||
+        activeNav === 'reports' ||
+        activeNav === 'laporan' ||
+        activeNav === 'Follow-up Checkout' ||
+        activeNav === 'survei-checkout'
+      );
+    }
+    return activeNav === itemId;
+  };
 
   return (
     <aside className="dashboard-sidebar-royal">
@@ -53,7 +86,7 @@ export function Sidebar({ activeNav = 'Dashboard', onNavChange, onLogout }) {
       <nav className="sidebar-menu-list">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeNav === item.id;
+          const isActive = isItemActive(item.id);
           return (
             <button
               key={item.id}

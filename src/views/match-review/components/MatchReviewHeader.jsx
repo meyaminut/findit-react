@@ -6,7 +6,7 @@ export function MatchReviewHeader({ ticket, onProtocolClick }) {
     <div className="review-top-header">
       <div className="review-header-left">
         <div className="review-meta-row">
-          <span className="ticket-id-badge">{ticket?.id || '#TK-2024-0314'}</span>
+          <span className="ticket-id-badge">{ticket?.id || '-'}</span>
           <span className="sop-phase-tag">VERIFIKASI LAPANGAN FO</span>
           <span className="status-pill-pending">
             <span className="pill-dot-blue"></span>

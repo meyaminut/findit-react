@@ -4,11 +4,11 @@ import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import AdminLoginView from './views/auth/AdminLoginView';
 import AdminDashboardView from './views/dashboard/AdminDashboardView';
 import MatchReviewView from './views/match-review/MatchReviewView';
-import HandoverView from './views/handover/HandoverView';
 import AllReportsView from './views/reports/AllReportsView';
 import NewClaimTicketView from './views/claim-ticket/NewClaimTicketView';
 import PostCheckoutSurveyView from './views/survey/PostCheckoutSurveyView';
-import ClaimTicketsListView from './views/claim-tickets/ClaimTicketsListView';
+import ManageAdminsView from './views/admin-management/ManageAdminsView';
+import OperationalReportsView from './views/reports/OperationalReportsView';
 
 import UserLogin from './views/auth/UserLogin';
 import UserRegister from './views/auth/UserRegister';
@@ -33,7 +33,7 @@ import UserDashboard from './views/dashboard/UserDashboard';
  * - `/user/report-form`        -> UserReportForm
  * - `/user/confirmation`       -> UserReportConfirmation
  * - `/user/thanks`             -> UserSuccessWelcome (Thank You, views/user)
- * - semua path lain            -> AdminShell (state-driven, existing behavior)
+ * - `/admin/*` & semua path lain -> AdminShell (state-driven, operations console)
  *
  * Route user dirender mandiri, TIDAK dibungkus Admin Layout/Sidebar.
  */
@@ -54,7 +54,9 @@ function App() {
         <Route path="/user/confirmation" element={<UserReportConfirmation />} />
         <Route path="/user/thanks" element={<UserThanksScreen />} />
 
-        {/* ---- Admin Portal (state-driven, existing behavior) ---- */}
+        {/* ---- Admin Portal (state-driven, operations console) ---- */}
+        <Route path="/admin" element={<AdminShell />} />
+        <Route path="/admin/*" element={<AdminShell />} />
         <Route path="*" element={<AdminShell />} />
       </Routes>
     </BrowserRouter>
@@ -62,12 +64,20 @@ function App() {
 }
 
 /**
- * Admin Portal shell. Kept state-driven to avoid breaking the existing
- * admin flow (login -> dashboard -> claim-tickets -> ...).
+ * Admin Portal shell.
+ * Controls active view routing across MVC Views:
+ * - 'login' (Admin Login Screen)
+ * - 'dashboard' (5. Admin Dashboard / Control Console)
+ * - 'new-claim' (6. Buat Laporan Tamu / New Claim Ticket)
+ * - 'verification' (7 & 8. Klaim & Serah Terima - Master Detail Hub & Handover Drawer)
+ * - 'all-reports' (9. Barang Temuan / Log Barang Temuan Master Inventory)
+ * - 'reports' (10. Laporan Operasional & Audit Resmi)
+ * - 'admin-management' (11. Kelola Admin / Admin Management Console)
  */
 function AdminShell() {
-  // Default route to 'claim-tickets' to inspect the newly created admin view
-  const [activeRoute, setActiveRoute] = useState('claim-tickets');
+  // Default route di-pin ke 'dashboard' (halaman utama saat pertama kali aplikasi diakses)
+  const [activeRoute, setActiveRoute] = useState('dashboard');
+  const [selectedMatchId, setSelectedMatchId] = useState(null);
 
   const handleLogout = () => {
     setActiveRoute('login');
@@ -77,21 +87,49 @@ function AdminShell() {
     setActiveRoute('dashboard');
   };
 
-  const handleNavChange = (navId) => {
+  const handleNavChange = (navId, payload = null) => {
+    if (payload?.matchId) {
+      setSelectedMatchId(payload.matchId);
+    }
     if (navId === 'Dashboard') {
       setActiveRoute('dashboard');
-    } else if (navId === 'Tiket Klaim' || navId === 'claim-tickets') {
-      setActiveRoute('claim-tickets');
-    } else if (navId === 'Buat Laporan Tamu') {
+    } else if (
+      navId === 'Verifikasi' ||
+      navId === 'Klaim & Serah Terima' ||
+      navId === 'Tiket Klaim' || 
+      navId === 'Tiket Klaim Tamu' || 
+      navId === 'claim-tickets' ||
+      navId === 'Verifikasi & Serah Terima' ||
+      navId === 'Verifikasi & Pencocokan' || 
+      navId === 'Match Review' ||
+      navId === 'match-review' ||
+      navId === 'Handover' ||
+      navId === 'handover' ||
+      navId === 'verification'
+    ) {
+      if (payload) {
+        setSelectedMatchId(typeof payload === 'string' ? payload : payload.matchId || null);
+      }
+      setActiveRoute('verification');
+    } else if (navId === 'Buat Laporan Tamu' || navId === 'new-claim') {
       setActiveRoute('new-claim');
-    } else if (navId === 'Verifikasi & Pencocokan' || navId === 'Match Review') {
-      setActiveRoute('match-review');
-    } else if (navId === 'Handover') {
-      setActiveRoute('handover');
-    } else if (navId === 'Barang Temuan' || navId === 'All Reports') {
+    } else if (navId === 'Barang Temuan' || navId === 'All Reports' || navId === 'all-reports') {
       setActiveRoute('all-reports');
-    } else if (navId === 'Survei Pasca-Checkout' || navId === 'survei-checkout') {
-      setActiveRoute('survei-checkout');
+    } else if (
+      navId === 'Laporan' ||
+      navId === 'reports' ||
+      navId === 'laporan' ||
+      navId === 'Follow-up Checkout' ||
+      navId === 'Survei Pasca-Checkout' || 
+      navId === 'survei-checkout'
+    ) {
+      setActiveRoute('reports');
+    } else if (
+      navId === 'Kelola Admin' ||
+      navId === 'admin-management' ||
+      navId === 'Admin Management'
+    ) {
+      setActiveRoute('admin-management');
     } else {
       setActiveRoute('dashboard');
     }
@@ -112,25 +150,18 @@ function AdminShell() {
 
       {activeRoute === 'new-claim' && (
         <NewClaimTicketView
+          activeNav="Verifikasi"
           onLogout={handleLogout}
           onNavChange={handleNavChange}
         />
       )}
 
-      {activeRoute === 'match-review' && (
+      {activeRoute === 'verification' && (
         <MatchReviewView
-          activeNav="Verifikasi & Pencocokan"
+          activeNav="Verifikasi"
           onNavChange={handleNavChange}
           onLogout={handleLogout}
-          onProceedToHandover={() => setActiveRoute('handover')}
-        />
-      )}
-
-      {activeRoute === 'handover' && (
-        <HandoverView
-          activeNav="Handover"
-          onNavChange={handleNavChange}
-          onLogout={handleLogout}
+          selectedMatchId={selectedMatchId}
         />
       )}
 
@@ -142,17 +173,17 @@ function AdminShell() {
         />
       )}
 
-      {activeRoute === 'survei-checkout' && (
-        <PostCheckoutSurveyView
-          activeNav="Survei Pasca-Checkout"
+      {activeRoute === 'reports' && (
+        <OperationalReportsView
+          activeNav="Laporan"
           onNavChange={handleNavChange}
           onLogout={handleLogout}
         />
       )}
 
-      {activeRoute === 'claim-tickets' && (
-        <ClaimTicketsListView
-          activeNav="Tiket Klaim"
+      {activeRoute === 'admin-management' && (
+        <ManageAdminsView
+          activeNav="Kelola Admin"
           onNavChange={handleNavChange}
           onLogout={handleLogout}
         />

@@ -14,7 +14,7 @@ export function MatchVerificationModal({ ticket, onClose, onConfirmMatch, isLoad
         <div className="modal-top-bar">
           <div className="modal-title-wrap">
             <CheckCircle2 size={20} className="text-amber-500" />
-            <h3 className="modal-heading">Pencocokan Tiket: {ticket.id}</h3>
+            <h3 className="modal-heading">Pencocokan Barang: {ticket.id}</h3>
           </div>
           <button type="button" className="modal-close-icon-btn" onClick={onClose}>
             <X size={18} />

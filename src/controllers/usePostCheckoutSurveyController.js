@@ -1,25 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
-  surveyKpiMetrics, 
-  incomingSurveyResponses, 
-  checkoutGuestsList, 
+  PostCheckoutSurveyModel,
   hospitalityInsights 
 } from '../models/PostCheckoutSurveyModel';
+import { StorageService } from '../services/StorageService';
 
 /**
  * Controller: usePostCheckoutSurveyController
  * Manages state and dispatch interactions for Screen 10: Survei Pasca-Checkout.
- * Follows strict MVC separation of concerns.
+ * Follows strict MVC separation of concerns, reading from and persisting to StorageService.
  */
 export function usePostCheckoutSurveyController() {
-  const [metrics, setMetrics] = useState(surveyKpiMetrics);
-  const [incomingResponses, setIncomingResponses] = useState(incomingSurveyResponses);
-  const [guests, setGuests] = useState(checkoutGuestsList);
+  const [metrics, setMetrics] = useState(() => PostCheckoutSurveyModel.getKpiMetrics());
+  const [incomingResponses, setIncomingResponses] = useState(() => PostCheckoutSurveyModel.getIncomingSurveyResponses());
+  const [guests, setGuests] = useState(() => PostCheckoutSurveyModel.getCheckoutGuestsList());
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [activeChatGuest, setActiveChatGuest] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState('12:45 WIB');
+
+  const refreshData = useCallback(() => {
+    setGuests(PostCheckoutSurveyModel.getCheckoutGuestsList());
+    setIncomingResponses(PostCheckoutSurveyModel.getIncomingSurveyResponses());
+    setMetrics(PostCheckoutSurveyModel.getKpiMetrics());
+  }, []);
+
+  useEffect(() => {
+    const handleUpdate = () => refreshData();
+    window.addEventListener('findit_survey_updated', handleUpdate);
+    return () => window.removeEventListener('findit_survey_updated', handleUpdate);
+  }, [refreshData]);
 
   const showToast = (message, type = 'success') => {
     setToastNotification({ message, type });
@@ -27,7 +38,7 @@ export function usePostCheckoutSurveyController() {
   };
 
   const handleSendMassSurveys = () => {
-    setGuests(prev => prev.map(g => {
+    const updated = guests.map((g) => {
       if (g.status === 'unseen') {
         return {
           ...g,
@@ -37,9 +48,12 @@ export function usePostCheckoutSurveyController() {
         };
       }
       return g;
-    }));
+    });
 
-    setMetrics(prev => ({
+    setGuests(updated);
+    StorageService.saveSurveyGuests(updated);
+
+    setMetrics((prev) => ({
       ...prev,
       surveysSent: prev.surveysSent + 2
     }));
@@ -48,7 +62,7 @@ export function usePostCheckoutSurveyController() {
   };
 
   const handleSendSingleEmail = (guest) => {
-    setGuests(prev => prev.map(g => {
+    const updated = guests.map((g) => {
       if (g.id === guest.id) {
         return {
           ...g,
@@ -58,12 +72,14 @@ export function usePostCheckoutSurveyController() {
         };
       }
       return g;
-    }));
-    showToast(`Survei pengingat dikirim ke email ${guest.email}!`);
+    });
+    setGuests(updated);
+    StorageService.saveSurveyGuests(updated);
+    showToast(`Survei pengingat dikirim ke email ${guest.email || guest.name}!`);
   };
 
   const handleSendSingleWhatsApp = (guest) => {
-    setGuests(prev => prev.map(g => {
+    const updated = guests.map((g) => {
       if (g.id === guest.id) {
         return {
           ...g,
@@ -73,8 +89,10 @@ export function usePostCheckoutSurveyController() {
         };
       }
       return g;
-    }));
-    showToast(`Pesan proaktif WhatsApp terkirim ke ${guest.phone}!`);
+    });
+    setGuests(updated);
+    StorageService.saveSurveyGuests(updated);
+    showToast(`Pesan proaktif WhatsApp terkirim ke ${guest.phone || guest.name}!`);
   };
 
   const handleOpenChatRoom = (guest) => {
@@ -86,6 +104,7 @@ export function usePostCheckoutSurveyController() {
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} WIB`;
     setLastSyncTime(timeStr);
+    refreshData();
     showToast(`Sinkronisasi Opera Cloud berhasil diperbarui pada ${timeStr}!`);
   };
 

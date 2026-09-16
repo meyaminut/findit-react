@@ -37,7 +37,7 @@ export function ActionableTicketsTable({
       {/* Header with Title and Filter Tabs */}
       <div className="tickets-card-header">
         <div className="tickets-title-col">
-          <h2 className="tickets-main-title">Tiket Perlu Ditindaklanjuti</h2>
+          <h2 className="tickets-main-title">Barang Perlu Ditindaklanjuti</h2>
           <p className="tickets-sub-title">
             Daftar klaim tamu &amp; laporan kamar yang belum diverifikasi silang
           </p>
@@ -74,7 +74,7 @@ export function ActionableTicketsTable({
         <table className="tickets-table">
           <thead>
             <tr>
-              <th>NO. TIKET</th>
+              <th>NO. BARANG</th>
               <th>TAMU &amp; KAMAR</th>
               <th>PERKIRAAN BARANG</th>
               <th>WAKTU LAPOR</th>
@@ -88,8 +88,8 @@ export function ActionableTicketsTable({
                 <td colSpan={6} style={{ padding: '48px 16px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#64748B' }}>
                     <Layers size={36} style={{ color: '#94A3B8', marginBottom: '4px' }} />
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B' }}>Tidak ada tiket yang memerlukan tindakan saat ini</span>
-                    <span style={{ fontSize: '13px' }}>Semua tiket tamu telah diverifikasi atau belum ada laporan baru.</span>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B' }}>Tidak ada barang yang memerlukan tindakan saat ini</span>
+                    <span style={{ fontSize: '13px' }}>Semua barang klaim tamu telah diverifikasi atau belum ada laporan baru.</span>
                   </div>
                 </td>
               </tr>
@@ -176,7 +176,7 @@ export function ActionableTicketsTable({
       {/* Pagination Footer */}
       <div className="tickets-pagination-footer">
         <span className="pagination-count-text">
-          Menampilkan {tickets.length} tiket operasional
+          Menampilkan {tickets.length} barang operasional
         </span>
         <div className="pagination-controls">
           <button type="button" className="pagination-btn neutral" disabled>

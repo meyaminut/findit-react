@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Download, PlusCircle } from 'lucide-react';
+import { Clock, PlusCircle } from 'lucide-react';
 import useDashboardController from '../../controllers/useDashboardController';
 import Sidebar from './components/Sidebar';
 import TopNavbar from './components/TopNavbar';
@@ -65,6 +65,8 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
         <TopNavbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onNavChange={onNavChange}
+          onLogout={onLogout}
         />
 
         {/* Scrollable Dashboard Body */}
@@ -95,16 +97,6 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
 
             {/* Right Action Buttons */}
             <div className="hero-actions-col">
-              <button
-                type="button"
-                className="btn-export-rekap"
-                onClick={handleExportRecap}
-                disabled={actionLoading}
-              >
-                <Download size={16} className="btn-icon" />
-                <span>Ekspor Rekap</span>
-              </button>
-
               <button
                 type="button"
                 className="btn-create-report-blue"

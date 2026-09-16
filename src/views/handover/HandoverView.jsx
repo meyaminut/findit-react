@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { HelpCircle, CheckCircle2, AlertTriangle, ClipboardCheck } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
 import HandoverPartySummary from './components/HandoverPartySummary';
@@ -12,13 +12,14 @@ import { StorageService } from '../../services/StorageService';
 import './HandoverView.css';
 
 /**
- * View Component: HandoverView (8. Handover Screen)
+ * View Component: HandoverView (Verifikasi & Serah Terima - Tab 2)
  * Decomposed clean modular MVC View for Grand Melia Front Office Handover.
  */
 export function HandoverView({ 
-  activeNav = 'Handover', 
+  activeNav = 'Verifikasi & Serah Terima', 
   onNavChange, 
-  onLogout 
+  onLogout,
+  matchId = null
 }) {
   const {
     data,
@@ -37,7 +38,7 @@ export function HandoverView({
     handlePrintPDF,
     handleSendWhatsApp,
     handleOpenAuditLog
-  } = useHandoverController();
+  } = useHandoverController({ matchId });
 
   const [searchQuery, setSearchQuery] = useState('');
   const auditLogs = StorageService.getAuditLogs();
@@ -60,6 +61,26 @@ export function HandoverView({
 
         {/* Main Content Workspace */}
         <main className="handover-scrollable-content">
+          {/* Operational Hub Workflow Tabs */}
+          <div className="hub-workflow-tabs">
+            <button
+              type="button"
+              className="hub-tab-btn"
+              onClick={() => onNavChange && onNavChange('Verifikasi & Serah Terima')}
+            >
+              <CheckCircle2 size={16} />
+              <span>1. Verifikasi &amp; Pencocokan Ciri</span>
+            </button>
+            <button
+              type="button"
+              className="hub-tab-btn active"
+            >
+              <ClipboardCheck size={16} />
+              <span>2. Form Serah Terima (Handover)</span>
+              <span className="hub-tab-badge">Aktif</span>
+            </button>
+          </div>
+
           {/* Header & Status Section */}
           <div className="handover-page-header">
             <div className="handover-header-left">

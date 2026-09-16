@@ -1,5 +1,6 @@
 import { ClaimTicketModel } from '../models/ClaimTicketModel';
 import { StorageService } from '../services/StorageService';
+import { MatchReviewModel } from '../models/MatchReviewModel';
 
 export class ClaimTicketController {
   static getInitialClaim() {
@@ -14,8 +15,14 @@ export class ClaimTicketController {
     return ClaimTicketModel.getQuickLocations();
   }
 
-  static getAutoMatch() {
-    return ClaimTicketModel.getAutoMatchCandidate();
+  /**
+   * Retrieves auto-match candidate if available.
+   * Centralized to MatchReviewModel as the single matching engine.
+   */
+  static getAutoMatch(ticketId = null) {
+    if (!ticketId) return null;
+    const candidates = MatchReviewModel.getCandidates(ticketId);
+    return candidates.length > 0 ? candidates[0] : null;
   }
 
   static async submitClaim(ticketData) {

@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Search, 
-  Download, 
   Calendar, 
   CheckCircle2, 
   Briefcase, 
@@ -30,7 +29,6 @@ export function ReportsTable({
   onRowsPerPageChange,
   currentPage,
   onPageChange,
-  onExport,
   onSelectReport
 }) {
   const getReporterBadgeIcon = (badgeType) => {
@@ -54,15 +52,6 @@ export function ReportsTable({
           <h2 className="reports-main-title">All Reports</h2>
           <span className="reports-total-pill">{totalCount} total submissions</span>
         </div>
-
-        <button 
-          type="button" 
-          className="btn-export-csv"
-          onClick={onExport}
-        >
-          <Download size={15} />
-          <span>Export CSV / Report</span>
-        </button>
       </div>
 
       {/* Filter Toolbar */}

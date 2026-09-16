@@ -16,8 +16,8 @@ export class DashboardModel {
       },
       pendingVerification: {
         value: 0,
-        unit: 'Tiket',
-        label: 'Tiket Menunggu Verifikasi',
+        unit: 'Barang',
+        label: 'Barang Menunggu Verifikasi',
         badge: 'Butuh Tindakan Segera',
         alertText: '',
         isHighlighted: false

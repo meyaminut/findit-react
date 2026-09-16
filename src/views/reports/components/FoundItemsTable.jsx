@@ -30,13 +30,6 @@ export function FoundItemsTable({
           >
             + Input Temuan Manual Baru
           </button>
-          <button
-            type="button"
-            className="btn-seed-sample"
-            onClick={onLoadSampleData}
-          >
-            Muat 2 Sampel Uji Coba
-          </button>
         </div>
       </div>
     );

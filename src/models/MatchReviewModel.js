@@ -1,200 +1,202 @@
+import { StorageService } from '../services/StorageService';
+
 /**
  * Model: MatchReviewModel
- * Represents algorithmic correlation pipeline data for candidate pairings
- * mapped to database `matches`, `reports`, and `users` tables.
+ * Dynamically computes candidate pairings between guest ClaimTickets and
+ * Housekeeping FoundItems from StorageService with rule-based confidence scoring.
  */
 export class MatchReviewModel {
-  static getCandidates() {
-    return [
-      {
-        id: 'M-4091',
-        tag: 'High Confidence',
-        tagType: 'amber',
-        timeAgo: 'Just now',
-        confidenceScore: 94,
-        category: 'Electronics / Mobile Phones',
-        lostReport: {
-          id: 'L-2049',
-          title: 'iPhone 15 Pro Max',
-          category: 'Electronics / Mobile Phones',
-          colorFinish: 'Titanium Blue with matte finish',
-          location: 'Gate 4, International Departures',
-          dateTime: 'Oct 23, 2024 • 14:15 WIB',
-          distinguishingMarkings: 'Small scratch near charging port, lockscreen has golden retriever wallpaper',
-          contactName: 'Alexander Wright',
-          contactEmail: 'alex.w@gmail.com',
-          image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Reported Photo'
-        },
-        foundReport: {
-          id: 'F-3182',
-          title: 'Dark Metallic Blue iPhone',
-          category: 'Electronics / Mobile Phones',
-          colorFinish: 'Navy / Titanium Blue',
-          location: 'Terminal 3 Gate 4 waiting lounge, seat 12B',
-          dateTime: 'Oct 23, 2024 • 14:40 WIB',
-          distinguishingMarkings: 'Clear bumper case, dog wallpaper visible on lockscreen',
-          finderInfo: 'Staff ID: Budi Santoso (Ground Ops)',
-          image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Custody Intake Log'
-        },
-        aiBreakdown: {
-          locationProximity: {
-            score: 98,
-            desc: 'Same terminal gate & departure lounge corridor'
-          },
-          timeDelta: {
-            score: 95,
-            desc: 'Found exactly 25 mins after reported loss event'
-          },
-          featureSimilarity: {
-            score: 92,
-            desc: 'Matching clear case model and dog lockscreen'
-          }
-        }
-      },
-      {
-        id: 'M-4088',
-        tag: 'Auto-Paired',
-        tagType: 'navy',
-        timeAgo: '18m ago',
-        confidenceScore: 88,
-        category: 'Personal Item / Wallet',
-        lostReport: {
-          id: 'L-2039',
-          title: 'Bellroy Leather Wallet',
-          category: 'Personal Item / Wallet',
-          colorFinish: 'Caramel Brown vegetable-tanned leather',
-          location: 'Food Court Area, Terminal 3',
-          dateTime: 'Oct 23, 2024 • 12:50 WIB',
-          distinguishingMarkings: 'Embossed owl logo on corner, driver license with name Siti',
-          contactName: 'Siti Rahma',
-          contactEmail: 'siti.r@outlook.com',
-          image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Reported Photo'
-        },
-        foundReport: {
-          id: 'F-3175',
-          title: 'Brown Bi-fold Wallet',
-          category: 'Personal Item / Wallet',
-          colorFinish: 'Brown Leather with card slots',
-          location: 'Near Starbucks F&B counter',
-          dateTime: 'Oct 23, 2024 • 13:10 WIB',
-          distinguishingMarkings: 'Contains various reward cards and Indonesian national ID',
-          finderInfo: 'Staff ID: Rian H. (F&B Floor Team)',
-          image: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Custody Intake Log'
-        },
-        aiBreakdown: {
-          locationProximity: {
-            score: 94,
-            desc: 'Food court adjacent to Starbucks counter'
-          },
-          timeDelta: {
-            score: 91,
-            desc: 'Found 20 mins post reported loss'
-          },
-          featureSimilarity: {
-            score: 86,
-            desc: 'Brand, leather texture, and card contents correspond'
-          }
-        }
-      },
-      {
-        id: 'M-4075',
-        tag: 'Auto-Paired',
-        tagType: 'navy',
-        timeAgo: '1h ago',
-        confidenceScore: 82,
-        category: 'Luggage / Suitcase',
-        lostReport: {
-          id: 'L-2022',
-          title: 'Samsonite Luggage Navy',
-          category: 'Luggage / Hardcase',
-          colorFinish: 'Deep Navy Blue with silver telescopic handle',
-          location: 'Baggage Carousel 4',
-          dateTime: 'Oct 23, 2024 • 11:20 WIB',
-          distinguishingMarkings: 'Red ribbon tied to top handle for identification',
-          contactName: 'Michael Chen',
-          contactEmail: 'mchen.corp@gmail.com',
-          image: 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Reported Photo'
-        },
-        foundReport: {
-          id: 'F-3160',
-          title: 'Blue Rolling Suitcase',
-          category: 'Luggage / Hardcase',
-          colorFinish: 'Navy Blue hard shell with 4 spinner wheels',
-          location: 'Arrival Hall Belt 4 baggage reclaim',
-          dateTime: 'Oct 23, 2024 • 11:45 WIB',
-          distinguishingMarkings: 'Red ribbon on handle, flight tag GA-412',
-          finderInfo: 'Staff ID: Bambang S. (Baggage Handling Lead)',
-          image: 'https://images.unsplash.com/photo-1581553680321-4fffae59fccd?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Custody Intake Log'
-        },
-        aiBreakdown: {
-          locationProximity: {
-            score: 90,
-            desc: 'Exact carousel belt location'
-          },
-          timeDelta: {
-            score: 85,
-            desc: 'Found during carousel clearing sweep'
-          },
-          featureSimilarity: {
-            score: 82,
-            desc: 'Red ribbon marker and luggage dimensions align'
-          }
-        }
-      },
-      {
-        id: 'M-4062',
-        tag: 'Auto-Paired',
-        tagType: 'navy',
-        timeAgo: '3h ago',
-        confidenceScore: 76,
-        category: 'Eyewear / Accessories',
-        lostReport: {
-          id: 'L-2005',
-          title: 'Ray-Ban Wayfarer Black',
-          category: 'Eyewear / Accessories',
-          colorFinish: 'Classic Black acetate frame, polarized dark green lenses',
-          location: 'Security Checkpoint A',
-          dateTime: 'Oct 23, 2024 • 09:15 WIB',
-          distinguishingMarkings: 'Tiny engraving RB on upper corner of left lens',
-          contactName: 'Clara Oswald',
-          contactEmail: 'clara.o@yahoo.com',
-          image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Reported Photo'
-        },
-        foundReport: {
-          id: 'F-3140',
-          title: 'Sunglasses in Hard Case',
-          category: 'Eyewear / Accessories',
-          colorFinish: 'Black frame sunglasses inside black leatherette snap case',
-          location: 'Tray Return Line 2 at Security Point A',
-          dateTime: 'Oct 23, 2024 • 09:40 WIB',
-          distinguishingMarkings: 'Wayfarer style with Ray-Ban microfiber cloth inside',
-          finderInfo: 'Staff ID: Agus W. (Security Inspector)',
-          image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&auto=format&fit=crop&q=80',
-          imageTag: 'Custody Intake Log'
-        },
-        aiBreakdown: {
-          locationProximity: {
-            score: 88,
-            desc: 'Same screening tray x-ray station'
-          },
-          timeDelta: {
-            score: 80,
-            desc: 'Found 25 mins later in empty tray'
-          },
-          featureSimilarity: {
-            score: 75,
-            desc: 'Classic frame style and authentic case verified'
-          }
-        }
+  /**
+   * Calculate rule-based confidence score and breakdown between a claim ticket and a found item.
+   */
+  static calculateScore(ticket, item) {
+    let score = 15; // Baseline score
+    let locationScore = 20;
+    let locationDesc = 'Lokasi dan area penemuan belum sinkron';
+    let timeScore = 20;
+    let timeDesc = 'Waktu penemuan berjarak lebih dari 7 hari dari pelaporan';
+    let featureScore = 20;
+    let featureDesc = 'Deskripsi umum belum terverifikasi';
+
+    // 1. Kategori (Category match) - Bobot s.d. 35
+    const ticketCat = (ticket.category || '').toLowerCase().trim();
+    const itemCat = (item.category || '').toLowerCase().trim();
+    if (ticketCat && itemCat && (ticketCat === itemCat || ticketCat.includes(itemCat) || itemCat.includes(ticketCat))) {
+      score += 35;
+      featureScore = 95;
+      featureDesc = `Kategori cocok sempurna (${ticket.category})`;
+    } else {
+      featureScore = 35;
+      featureDesc = `Kategori berbeda: klaim '${ticket.category || '-'}' vs fisik '${item.category || '-'}'`;
+    }
+
+    // 2. Ciri Kata Kunci / Warna / Merek - Bobot s.d. 10
+    const ticketWords = `${ticket.itemName || ''} ${ticket.brand || ''} ${ticket.color || ''}`.toLowerCase();
+    const itemWords = `${item.name || ''} ${item.category || ''}`.toLowerCase();
+    const colors = ['hitam', 'putih', 'biru', 'merah', 'emas', 'silver', 'cokelat', 'abu', 'black', 'white', 'blue', 'gold'];
+    const matchedColor = colors.find((c) => ticketWords.includes(c) && itemWords.includes(c));
+    if (matchedColor) {
+      score += 10;
+      featureDesc += ` • Warna '${matchedColor}' terkonfirmasi`;
+    }
+
+    // 3. Lokasi / Kamar (Location / Room) - Bobot s.d. 35
+    const ticketRoom = (ticket.roomNumber || '').toString().trim().replace(/[^0-9a-zA-Z]/g, '');
+    const itemRoom = (item.roomNumber || '').toString().trim().replace(/[^0-9a-zA-Z]/g, '');
+    const ticketLoc = (ticket.locationLost || '').toLowerCase();
+    const itemLoc = (item.locationFound || '').toLowerCase();
+
+    if (ticketRoom && itemRoom && ticketRoom.toLowerCase() === itemRoom.toLowerCase()) {
+      score += 35;
+      locationScore = 98;
+      locationDesc = `Kamar identik: Kamar ${ticket.roomNumber}`;
+    } else if (ticketRoom && itemRoom && ticketRoom[0] === itemRoom[0]) {
+      score += 15;
+      locationScore = 75;
+      locationDesc = `Lantai sama (${ticketRoom[0]}), area berdekatan`;
+    } else if (ticketLoc && itemLoc && (ticketLoc.includes(itemLoc) || itemLoc.includes(ticketLoc))) {
+      score += 20;
+      locationScore = 85;
+      locationDesc = `Area penemuan sinkron (${ticket.locationLost || item.locationFound})`;
+    }
+
+    // 4. Rentang Waktu (Date range) - Bobot s.d. 20
+    const ticketTime = new Date(ticket.createdAt || ticket.reportedAt || Date.now()).getTime();
+    const itemTime = new Date(item.createdAt || item.foundAt || Date.now()).getTime();
+    const diffHours = isNaN(ticketTime) || isNaN(itemTime) ? 48 : Math.abs(ticketTime - itemTime) / (1000 * 60 * 60);
+
+    if (diffHours <= 24) {
+      score += 20;
+      timeScore = 95;
+      timeDesc = 'Ditemukan dalam rentang 24 jam dari waktu pelaporan';
+    } else if (diffHours <= 72) {
+      score += 15;
+      timeScore = 85;
+      timeDesc = 'Ditemukan dalam rentang 3 hari dari waktu pelaporan';
+    } else if (diffHours <= 168) {
+      score += 10;
+      timeScore = 70;
+      timeDesc = 'Ditemukan dalam rentang 7 hari dari waktu pelaporan';
+    } else {
+      timeScore = 40;
+      timeDesc = 'Ditemukan lebih dari 7 hari setelah pelaporan';
+    }
+
+    const confidenceScore = Math.min(Math.max(score, 15), 99);
+
+    return {
+      confidenceScore,
+      breakdown: {
+        locationProximity: { score: locationScore, desc: locationDesc },
+        timeDelta: { score: timeScore, desc: timeDesc },
+        featureSimilarity: { score: featureScore, desc: featureDesc }
       }
-    ];
+    };
+  }
+
+  static formatTimeAgo(dateInput) {
+    if (!dateInput) return 'Baru saja';
+    const time = new Date(dateInput).getTime();
+    if (isNaN(time)) return 'Baru saja';
+    const diffMinutes = Math.floor((Date.now() - time) / (1000 * 60));
+    if (diffMinutes < 5) return 'Baru saja';
+    if (diffMinutes < 60) return `${diffMinutes}m yang lalu`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}j yang lalu`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} hari yang lalu`;
+  }
+
+  /**
+   * Retrieves dynamically generated candidate pairings from StorageService.
+   * If ticketId is provided, returns scored candidates specifically paired with that ticket.
+   * Format is backward-compatible with UI expectations.
+   */
+  static getCandidates(targetTicketId = null) {
+    const tickets = StorageService.getTickets();
+    const foundItems = StorageService.getFoundItems();
+
+    if (!tickets.length || !foundItems.length) {
+      return [];
+    }
+
+    // Filter tickets if specific target provided
+    const relevantTickets = targetTicketId
+      ? tickets.filter((t) => t.id === targetTicketId)
+      : tickets;
+
+    const candidates = [];
+
+    relevantTickets.forEach((ticket) => {
+      foundItems.forEach((item) => {
+        const { confidenceScore, breakdown } = this.calculateScore(ticket, item);
+        const cleanTicketId = (ticket.id || '').replace(/[^0-9]/g, '') || '0';
+        const cleanItemId = (item.id || '').replace(/[^0-9]/g, '') || '0';
+        const pairId = `M-${cleanTicketId.slice(-4)}-${cleanItemId.slice(-4)}`;
+
+        const candidate = {
+          id: pairId,
+          matchId: pairId,
+          lost_report_id: ticket.id,
+          found_report_id: item.id,
+          ticketId: ticket.id,
+          itemId: item.id,
+          status: 'pending',
+          tag: confidenceScore >= 85 ? 'High Confidence' : confidenceScore >= 70 ? 'Auto-Paired' : 'Potential Match',
+          tagType: confidenceScore >= 85 ? 'amber' : 'navy',
+          timeAgo: this.formatTimeAgo(item.createdAt || ticket.createdAt),
+          confidenceScore,
+          category: ticket.category || item.category,
+
+          // Format for QueueSidebar & ComparisonDetail
+          lostReport: {
+            id: ticket.id,
+            title: ticket.itemName || 'Barang Hilang',
+            category: ticket.category || '-',
+            colorFinish: [ticket.brand, ticket.color].filter(Boolean).join(' • ') || ticket.color || '-',
+            location: ticket.locationLost ? `${ticket.locationLost} (Kamar ${ticket.roomNumber})` : `Kamar ${ticket.roomNumber || '-'}`,
+            dateTime: ticket.reportedAt || ticket.createdAt || '-',
+            distinguishingMarkings: ticket.secretDetail || '-',
+            contactName: ticket.guestName || 'Tamu Hotel',
+            contactEmail: ticket.email || '-',
+            image: ticket.photoUrl || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=600&auto=format&fit=crop&q=80',
+            imageTag: 'Laporan Tamu'
+          },
+          foundReport: {
+            id: item.id,
+            title: item.name || 'Barang Temuan',
+            category: item.category || '-',
+            colorFinish: item.name || '-',
+            location: item.locationFound ? `${item.locationFound} (Kamar ${item.roomNumber})` : `Kamar ${item.roomNumber || '-'}`,
+            dateTime: item.foundAt || item.createdAt || '-',
+            distinguishingMarkings: `Disimpan di: ${item.storageLocation || 'Brankas FO'}`,
+            finderInfo: item.finderName ? `Staf: ${item.finderName}` : 'Housekeeping Team',
+            image: item.photoUrl || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80',
+            imageTag: 'Log Fisik Housekeeping'
+          },
+          aiBreakdown: breakdown,
+
+          // Direct FoundItem properties for HousekeepingCandidatesCard compatibility
+          name: item.name,
+          roomNumber: item.roomNumber || ticket.roomNumber,
+          storageLocation: item.storageLocation,
+          finderName: item.finderName,
+          locationFound: item.locationFound,
+          foundAt: item.foundAt,
+          photoUrl: item.photoUrl,
+          score: confidenceScore,
+          rawTicket: ticket,
+          rawItem: item
+        };
+
+        candidates.push(candidate);
+      });
+    });
+
+    // Sort descending by confidence score
+    candidates.sort((a, b) => b.confidenceScore - a.confidenceScore);
+
+    return candidates;
   }
 }
 

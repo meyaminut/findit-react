@@ -48,7 +48,7 @@ export function ClaimTicketsListView({
 
   const handleVerifyTicket = (ticket) => {
     if (onNavChange) {
-      onNavChange('Verifikasi & Pencocokan');
+      onNavChange('Verifikasi & Serah Terima');
     }
   };
 
