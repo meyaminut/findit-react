@@ -39,8 +39,10 @@ export async function login(email, password) {
   return data;
 }
 
-export async function register(name, email, password) {
-  const data = await apiClient.post('/register', { name, email, password });
+export async function register(name, email, password, phone) {
+  // Kontrak backend Go: field PascalCase, Phone wajib (validasi 'required').
+  // Samakan dengan payload api.js di flow user (UserRegister).
+  const data = await apiClient.post('/register', { Name: name, Email: email, Password: password, Phone: phone });
   return data;
 }
 
