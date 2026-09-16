@@ -1,28 +1,35 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   Bell,
   Camera,
   Check,
   ImagePlus,
+  Loader2,
   RefreshCw,
   ShieldCheck,
   Trash2,
   X,
 } from 'lucide-react';
+import { apiPost, apiUpload, ApiError, getCurrentUser } from '../../services/api';
 import './UserReportForm.css';
 
 const CATEGORIES = ['Elektronik', 'Perhiasan & Jam', 'Dompet / Tas', 'Pakaian', 'Dokumen', 'Lainnya'];
 
 const LOCATION_PILLS = ['Di Meja Nakas', 'Di Lemari Pakaian', 'Di Kamar Mandi', 'Bawah Ranjang'];
 
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5 MB per file
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 /**
  * View Component: UserReportForm
  * Form "Laporkan Barang Tertinggal (Guest Report)" di User Portal.
- * Layout & elemen mengikuti spesifikasi desain (banner, detail barang,
- * kontak konfirmasi, submit) dengan state management sederhana.
+ * Submit melakukan 2 request berurutan: upload foto (POST /upload)
+ * lalu simpan laporan (POST /reports). Error upload dan error simpan
+ * ditampilkan terpisah.
  */
 export default function UserReportForm() {
   const navigate = useNavigate();
@@ -34,10 +41,21 @@ export default function UserReportForm() {
   const [features, setFeatures] = useState('');
 
   const [photos, setPhotos] = useState([]);
+  const [photoError, setPhotoError] = useState(null);
   const inputCameraRef = useRef(null);
   const inputGalleryRef = useRef(null);
 
   const [touched, setTouched] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStage, setSubmitStage] = useState('idle'); // idle | uploading | creating
+  const [errorBanner, setErrorBanner] = useState(null); // { type: 'upload'|'report'|'auth', message }
+
+  const currentUser = getCurrentUser();
+
+  const roomInvalid = touched && !roomNumber.trim();
+  const descriptionInvalid = touched && !description.trim();
+  const categoryInvalid = touched && !category;
+  const isFormValid = roomNumber.trim() && description.trim() && category;
 
   const toggleCategory = (value) => {
     setCategory((prev) => (prev === value ? null : value));
@@ -52,49 +70,165 @@ export default function UserReportForm() {
     }
   };
 
+  const validateFile = (file) => {
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      return 'Format foto tidak didukung. Hanya JPEG, PNG, dan WebP yang diizinkan.';
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      return 'Ukuran foto maksimal 5 MB per file.';
+    }
+    return null;
+  };
+
+  const collectFiles = (files) => {
+    const accepted = [];
+    let firstError = null;
+    Array.from(files).forEach((file) => {
+      const err = validateFile(file);
+      if (err) {
+        if (!firstError) firstError = err;
+        return;
+      }
+      accepted.push({ preview: URL.createObjectURL(file), file });
+    });
+    if (firstError) setPhotoError(firstError);
+    else setPhotoError(null);
+    return accepted;
+  };
+
   const handleFiles = (files) => {
-    const imageList = Array.from(files).map((file) => URL.createObjectURL(file));
-    setPhotos((prev) => [...prev, ...imageList]);
-  };
-
-  const handleCameraFiles = (files) => {
-    const imageList = Array.from(files).map((file) => URL.createObjectURL(file));
-    setPhotos(imageList);
-  };
-
-  const removePhoto = (url) => {
-    setPhotos((prev) => prev.filter((photo) => photo !== url));
-  };
-
-  const getContactData = () => {
-    try {
-      const userData = JSON.parse(window.localStorage.getItem('findit-registered-user')) || {};
-      return {
-        email: userData.email || '',
-        whatsapp: userData.phone || '',
-      };
-    } catch {
-      return { email: '', whatsapp: '' };
+    const accepted = collectFiles(files);
+    if (accepted.length > 0) {
+      setPhotos((prev) => [...prev, ...accepted]);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleCameraFiles = (files) => {
+    const accepted = collectFiles(files);
+    if (accepted.length > 0) {
+      setPhotos(accepted);
+    }
+  };
+
+  const removePhoto = (previewUrl) => {
+    setPhotos((prev) => {
+      const target = prev.find((photo) => photo.preview === previewUrl);
+      if (target) URL.revokeObjectURL(target.preview);
+      return prev.filter((photo) => photo.preview !== previewUrl);
+    });
+  };
+
+  const resetForm = () => {
+    photos.forEach((photo) => URL.revokeObjectURL(photo.preview));
+    setPhotos([]);
+    setPhotoError(null);
+    setRoomNumber('');
+    setDescription('');
+    setCategory(null);
+    setLocation('');
+    setFeatures('');
+    setTouched(false);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setTouched(true);
-    if (!roomNumber.trim() || !description.trim()) return;
+    if (!isFormValid || isSubmitting) return;
 
-    const reportData = {
-      roomNumber: roomNumber.trim(),
-      description: description.trim(),
-      category,
-      location,
-      features,
-      photos,
-      contact: getContactData(),
-    };
+    setErrorBanner(null);
 
-    // TODO: hubungkan ke API / controller laporan guest sebelum redirect
-    navigate('/user/confirmation', { state: { report: reportData } });
+    if (!currentUser) {
+      setErrorBanner({
+        type: 'auth',
+        message: 'Anda perlu masuk untuk mengirim laporan. Silakan masuk terlebih dahulu.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const photoUrls = [];
+
+    // STEP 1: upload foto (jika ada)
+    if (photos.length > 0) {
+      setSubmitStage('uploading');
+      try {
+        for (const photo of photos) {
+          const up = await apiUpload('/upload', photo.file, 'file');
+          if (up?.data?.url) photoUrls.push(up.data.url);
+        }
+      } catch (err) {
+        const message =
+          err instanceof ApiError
+            ? err.status === 401
+              ? 'Sesi Anda berakhir. Silakan masuk kembali untuk mengunggah foto.'
+              : err.message || 'Gagal mengunggah foto.'
+            : 'Gagal mengunggah foto. Periksa koneksi Anda dan coba lagi.';
+        setErrorBanner({ type: 'upload', message });
+        setIsSubmitting(false);
+        setSubmitStage('idle');
+        return;
+      }
+    }
+
+    // STEP 2: simpan laporan
+    setSubmitStage('creating');
+    try {
+      const result = await apiPost('/reports', {
+        user_id: currentUser.id,
+        type: 'lost',
+        title: description.trim().slice(0, 80),
+        description: description.trim(),
+        category: category || 'Lainnya',
+        room_number: roomNumber.trim(),
+        location,
+        photo_url: photoUrls.filter(Boolean).join(','),
+      });
+      if (result?.status === 'success') {
+        resetForm();
+        navigate('/user/confirmation', { state: { report: result.data } });
+        return;
+      }
+      setErrorBanner({
+        type: 'report',
+        message: result?.message || 'Gagal menyimpan laporan. Silakan coba lagi.',
+      });
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.status === 401
+            ? 'Sesi Anda berakhir. Silakan masuk kembali untuk mengirim laporan.'
+            : err.message || 'Gagal menyimpan laporan.'
+          : 'Gagal menyimpan laporan. Silakan coba lagi.';
+      setErrorBanner({ type: 'report', message });
+    } finally {
+      setIsSubmitting(false);
+      setSubmitStage('idle');
+    }
+  };
+
+  const submitLabel = () => {
+    if (isSubmitting && submitStage === 'uploading') {
+      return (
+        <>
+          <Loader2 size={18} className="gr-submit-spin" />
+          Mengunggah foto...
+        </>
+      );
+    }
+    if (isSubmitting && submitStage === 'creating') {
+      return (
+        <>
+          <Loader2 size={18} className="gr-submit-spin" />
+          Menyimpan laporan...
+        </>
+      );
+    }
+    return (
+      <>
+        Kirim Laporan &amp; Mulai Pencarian
+        <ArrowRight size={18} className="gr-submit-arrow" />
+      </>
+    );
   };
 
   return (
@@ -127,10 +261,15 @@ export default function UserReportForm() {
             </div>
           </section>
 
-          {/* Location Card */}
-          {/* (dihapus: lokasi pindah ke input "Nomor Kamar" di dalam form) */}
-
           <form className="gr-form" onSubmit={handleSubmit}>
+            {/* Banner Error Global */}
+            {errorBanner && (
+              <div className={`gr-error-banner gr-error-banner-${errorBanner.type}`} role="alert">
+                <AlertCircle size={16} />
+                <span>{errorBanner.message}</span>
+              </div>
+            )}
+
             {/* ---------- SECTION 1: DETAIL BARANG ---------- */}
             <div className="gr-section">
               <span className="gr-section-head">
@@ -146,13 +285,13 @@ export default function UserReportForm() {
                   id="gr-room-number"
                   type="text"
                   inputMode="numeric"
-                  className={`gr-input ${touched && !roomNumber.trim() ? 'gr-input-error' : ''}`}
+                  className={`gr-input ${roomInvalid ? 'gr-input-error' : ''}`}
                   placeholder="Contoh: 314, 502, atau Area Lobby"
                   value={roomNumber}
                   onChange={(e) => setRoomNumber(e.target.value)}
                   required
                 />
-                {touched && !roomNumber.trim() && (
+                {roomInvalid && (
                   <span className="gr-error-text">Mohon isi nomor kamar Anda.</span>
                 )}
               </div>
@@ -215,14 +354,14 @@ export default function UserReportForm() {
                   <div className="gr-upload-panel">
                     <div className="gr-upload-previews">
                       {photos.map((photo) => (
-                        <div className="gr-photo-thumb" key={photo}>
-                          <img src={photo} alt="Foto barang" />
+                        <div className="gr-photo-thumb" key={photo.preview}>
+                          <img src={photo.preview} alt="Foto barang" />
                           <button
                             type="button"
                             className="gr-photo-remove"
                             onClick={(e) => {
                               e.stopPropagation();
-                              removePhoto(photo);
+                              removePhoto(photo.preview);
                             }}
                             aria-label="Hapus foto"
                           >
@@ -243,13 +382,19 @@ export default function UserReportForm() {
                       <button
                         type="button"
                         className="gr-upload-btn gr-upload-remove"
-                        onClick={() => setPhotos([])}
+                        onClick={() => {
+                          photos.forEach((photo) => URL.revokeObjectURL(photo.preview));
+                          setPhotos([]);
+                        }}
                       >
                         <Trash2 size={16} />
                         Hapus Foto
                       </button>
                     </div>
                   </div>
+                )}
+                {photoError && (
+                  <span className="gr-error-text">{photoError}</span>
                 )}
               </div>
 
@@ -260,13 +405,13 @@ export default function UserReportForm() {
                 </label>
                 <textarea
                   id="gr-description"
-                  className={`gr-input gr-textarea ${touched && !description.trim() ? 'gr-input-error' : ''}`}
+                  className={`gr-input gr-textarea ${descriptionInvalid ? 'gr-input-error' : ''}`}
                   rows={2}
                   placeholder="Contoh: Jam tangan Garmin hitam, dompet kulit, charger MacBook..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-                {touched && !description.trim() && (
+                {descriptionInvalid && (
                   <span className="gr-error-text">Mohon isi barang yang tertinggal.</span>
                 )}
               </div>
@@ -279,13 +424,16 @@ export default function UserReportForm() {
                     <button
                       key={value}
                       type="button"
-                      className={`gr-pill ${category === value ? 'active' : ''}`}
+                      className={`gr-pill ${category === value ? 'active' : ''} ${categoryInvalid && !category ? 'gr-pill-error' : ''}`}
                       onClick={() => toggleCategory(value)}
                     >
                       {value}
                     </button>
                   ))}
                 </div>
+                {categoryInvalid && (
+                  <span className="gr-error-text">Mohon pilih salah satu kategori.</span>
+                )}
               </div>
 
               {/* Lokasi Perkiraan */}
@@ -340,9 +488,8 @@ export default function UserReportForm() {
             </div>
 
             {/* Submit */}
-            <button type="submit" className="gr-submit-btn">
-              Kirim Laporan &amp; Mulai Pencarian
-              <ArrowRight size={18} className="gr-submit-arrow" />
+            <button type="submit" className="gr-submit-btn" disabled={isSubmitting}>
+              {submitLabel()}
             </button>
 
             {/* Footer Info */}

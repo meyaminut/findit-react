@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Bell, LogOut, Radar, Search } from 'lucide-react';
+import { getCurrentUser } from '../../services/api';
 import './UserDashboard.css';
 
 /**
@@ -7,11 +8,15 @@ import './UserDashboard.css';
  * Landing page user portal (konteks pemulihan barang Grand Meliá / FindIt).
  * Aksi cepat: ke Survei & Deteksi Barang (/user/survey) atau
  * Laporkan Barang Tertinggal (/user/report-form).
- * TODO: ganti konten dengan halaman dashboard user yang sebenarnya
- * (daftar laporan aktif, status pemulihan, dsb) sesuai desain tim.
  */
 export default function UserDashboard() {
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  const firstName = currentUser?.name?.split(' ')[0] || 'Tamu';
+
+  const handleLogout = () => {
+    navigate('/user/login');
+  };
 
   return (
     <div className="user-dashboard-page">
@@ -22,7 +27,7 @@ export default function UserDashboard() {
             <div className="ud-logo">
               Find<span className="ud-logo-it">!t</span>
             </div>
-            <h1 className="ud-title">Selamat datang kembali!</h1>
+            <h1 className="ud-title">Selamat datang kembali, {firstName}!</h1>
             <p className="ud-subtitle">
               Portal pemulihan barang Grand Meliá — pantau laporan &amp; status pencarian barang Anda.
             </p>
@@ -77,7 +82,7 @@ export default function UserDashboard() {
             </button>
           </div>
 
-          <button type="button" className="ud-logout-btn" onClick={() => navigate('/user/login')}>
+          <button type="button" className="ud-logout-btn" onClick={handleLogout}>
             <LogOut size={14} /> Log out
           </button>
         </main>

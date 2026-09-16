@@ -162,6 +162,25 @@
   flex-direction: column;
 }
 
+.ur-alert-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff1f0;
+  border: 1px solid #ffc9c4;
+  border-radius: 12px;
+  color: #c0392b;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 11px 13px;
+  margin-bottom: 15px;
+}
+
+.ur-alert-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .ur-field {
   margin-bottom: 13px;
 }

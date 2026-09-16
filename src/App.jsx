@@ -18,6 +18,7 @@ import UserSurveyLanding from './views/user/UserSurveyLanding';
 import UserReportForm from './views/user/UserReportForm';
 import UserReportConfirmation from './views/user/UserReportConfirmation';
 import UserThanksScreen from './views/user/UserSuccessWelcome';
+import UserDashboard from './views/dashboard/UserDashboard';
 
 /**
  * Root Application Component.
@@ -47,7 +48,7 @@ function App() {
         <Route path="/user/login" element={<UserLogin />} />
         <Route path="/user/register" element={<UserRegister />} />
         <Route path="/user/welcome" element={<UserSuccessWelcome />} />
-        <Route path="/user/dashboard" element={<Navigate to="/user/login" replace />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/user/survey" element={<UserSurveyLanding />} />
         <Route path="/user/report-form" element={<UserReportForm />} />
         <Route path="/user/confirmation" element={<UserReportConfirmation />} />

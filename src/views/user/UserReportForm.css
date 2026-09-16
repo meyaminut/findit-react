@@ -227,6 +227,41 @@
   margin-top: 6px;
 }
 
+.gr-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.gr-error-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.gr-error-banner-upload {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+}
+
+.gr-error-banner-report {
+  background: #fff1f0;
+  border: 1px solid #ffc9c4;
+  color: #c0392b;
+}
+
+.gr-error-banner-auth {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
 /* --------------------------- Quick Category Pills ----------------------- */
 .gr-pill-label {
   display: block;
@@ -263,6 +298,11 @@
   border-color: #00236f;
   color: #ffffff;
   box-shadow: 0 6px 14px -6px rgba(0, 35, 111, 0.55);
+}
+
+.gr-pill-error {
+  border-color: #dc2626;
+  background: #fff5f5;
 }
 
 /* ---------------------------- Location Pills --------------------------- */
@@ -502,6 +542,28 @@
 
 .gr-submit-btn:active {
   transform: translateY(0);
+}
+
+.gr-submit-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 12px 24px -10px rgba(254, 166, 25, 0.5);
+}
+
+.gr-submit-btn:disabled:hover {
+  background: #fea619;
+  transform: none;
+}
+
+.gr-submit-spin {
+  animation: gr-spin 1s linear infinite;
+}
+
+@keyframes gr-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .gr-submit-arrow {

@@ -127,6 +127,34 @@
   flex: 1;
 }
 
+.ul-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 11px 13px;
+  margin-bottom: 14px;
+}
+
+.ul-alert svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ul-alert-error {
+  background: #fff1f0;
+  border: 1px solid #ffc9c4;
+  color: #c0392b;
+}
+
+.ul-alert-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
 .ul-field {
   margin-bottom: 14px;
 }

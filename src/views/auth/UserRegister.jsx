@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Eye, EyeOff, Lock, Mail, Phone, RefreshCw, User } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, Eye, EyeOff, Lock, Mail, Phone, RefreshCw, User } from 'lucide-react';
 import finditLogo from '../../assets/logo-light.png';
+import { apiPost, ApiError } from '../../services/api';
 import './UserRegister.css';
 
 /**
  * View Component: UserRegister
- * Pendaftaran murni berbasis kredensial teks.
+ * Pendaftaran berbasis kredensial teks ke backend (POST /register).
  * Urutan field: Nama Lengkap, Email, No. Telepon/WhatsApp,
  * Kata Sandi, Konfirmasi Kata Sandi.
- * Flow: "Daftar Akun" -> /user/welcome, "Masuk" -> /user/login.
+ * Flow: "Daftar Akun" -> /user/login (email ter-prefill),
+ *       "Masuk" -> /user/login.
  */
 export default function UserRegister() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function UserRegister() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const isEmailValid = email.includes('@') && email.includes('.');
   const phoneDigits = phone.replace(/\D/g, '');
@@ -48,21 +51,59 @@ export default function UserRegister() {
     isConfirmValid &&
     agreeTerms;
 
-  const handleSubmit = (e) => {
+  const translateValidationError = (message) => {
+    if (!message) return 'Registrasi gagal. Silakan coba lagi.';
+    if (message.includes('registerInput.Name') || message.includes('Field validation for \'Name\'')) {
+      return 'Nama lengkap wajib diisi.';
+    }
+    if (message.includes('registerInput.Email') || message.includes('Field validation for \'Email\'')) {
+      return 'Format email tidak valid. Gunakan email yang benar.';
+    }
+    if (message.includes('registerInput.Password') || message.includes('Field validation for \'Password\'')) {
+      return 'Kata sandi terlalu pendek. Minimal 8 karakter.';
+    }
+    if (message.includes('registerInput.Phone') || message.includes('Field validation for \'Phone\'')) {
+      return 'Nomor telepon tidak valid.';
+    }
+    return message;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid || isLoading) return;
-    const userData = {
-      fullName: fullName.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phoneDigits,
-      password,
-    };
-    window.localStorage.setItem('findit-registered-user', JSON.stringify(userData));
+    setErrorMessage(null);
     setIsLoading(true);
-    window.setTimeout(() => {
+    try {
+      const userData = {
+        Name: fullName.trim(),
+        Email: email.trim().toLowerCase(),
+        Password: password,
+        Phone: phoneDigits,
+      };
+      const result = await apiPost('/register', userData);
+      if (result?.status === 'success') {
+        // Backend register tidak mengembalikan token: arahkan ke login
+        // dengan email ter-prefill supaya tamu langsung bisa masuk.
+        window.sessionStorage.setItem('findit-registered-email', userData.Email);
+        navigate('/user/login', { state: { registeredEmail: userData.Email, registered: true } });
+        return;
+      }
+      setErrorMessage(result?.message || 'Registrasi gagal. Silakan coba lagi.');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.status === 409) {
+          setErrorMessage('Email sudah terdaftar. Silakan masuk atau gunakan email lain.');
+        } else if (err.status === 400) {
+          setErrorMessage(translateValidationError(err.message));
+        } else {
+          setErrorMessage(err.message || 'Registrasi gagal. Silakan coba lagi.');
+        }
+      } else {
+        setErrorMessage('Terjadi kesalahan jaringan. Periksa koneksi Anda dan coba lagi.');
+      }
+    } finally {
       setIsLoading(false);
-      navigate('/user/welcome');
-    }, 600);
+    }
   };
 
   return (
@@ -88,6 +129,14 @@ export default function UserRegister() {
           <h1 className="ur-heading">Buat Akun Baru</h1>
 
           <form className="ur-form" onSubmit={handleSubmit}>
+            {/* Alert Error */}
+            {errorMessage && (
+              <div className="ur-alert-error" role="alert">
+                <AlertCircle size={16} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {/* Nama Lengkap */}
             <div className="ur-field">
               <label htmlFor="ur-name" className="ur-label">

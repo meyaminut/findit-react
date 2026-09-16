@@ -64,6 +64,10 @@ export function MatchReviewView({
     }));
   };
 
+  // FIXME (belum di-fix): backend PUT /matches/:id replace SEMUA field,
+  // bukan partial update. Approve/reject match saat ini bisa mengosongkan
+  // activity_note & handover_method yang sudah terisi. Lihat diskusi
+  // checkpoint 3. JANGAN deploy ke production sebelum ini di-fix.
   const handleMarkVerified = () => {
     if (activeTicket?.id) {
       StorageService.updateTicketStatus(activeTicket.id, 'Terverifikasi');
@@ -78,6 +82,10 @@ export function MatchReviewView({
     }, 800);
   };
 
+  // FIXME (belum di-fix): backend PUT /matches/:id replace SEMUA field,
+  // bukan partial update. Approve/reject match saat ini bisa mengosongkan
+  // activity_note & handover_method yang sudah terisi. Lihat diskusi
+  // checkpoint 3. JANGAN deploy ke production sebelum ini di-fix.
   const handleRejectRelation = () => {
     showToast('Relasi barang dilepas. Kandidat dikembalikan ke antrean temuan.', 'warning');
   };

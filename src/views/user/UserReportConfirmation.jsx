@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   AlarmClock,
   ArrowLeft,
@@ -8,6 +8,7 @@ import {
   Copy,
   Lock,
 } from 'lucide-react';
+import { getCurrentUser } from '../../services/api';
 import './UserReportConfirmation.css';
 
 const STEPS = [
@@ -18,9 +19,9 @@ const STEPS = [
   },
   {
     state: 'progress',
-    title: 'Penyisiran Kamar 314',
-    badge: 'Sedang Berlangsung',
-    desc: 'Room Attendant sedang menyisir area kamar tidur & meja.',
+    title: 'Sedang Berlangsung',
+    badge: 'Pencarian Aktif',
+    desc: 'Tim housekeeping sedang menyisir area kamar Anda.',
   },
   {
     state: 'pending',
@@ -30,21 +31,32 @@ const STEPS = [
   },
 ];
 
-const TICKET_NUMBER = '#CLM-2024-0892';
-
 /**
  * View Component: UserReportConfirmation
  * Halaman "Konfirmasi Laporan" di User Portal.
- * Menampilkan nomor tiket, ringkasan barang, timeline proses,
- * serta aksi hubungi/ simpan. Di-render setelah submit UserReportForm.
+ * Menampilkan nomor tiket, ringkasan barang, timeline proses, serta aksi
+ * salin nomor tiket. Data laporan diambil dari location.state (hasil POST
+ * /reports) dengan fallback ke nilai default bila dibuka langsung.
  */
 export default function UserReportConfirmation() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [copied, setCopied] = useState(false);
+
+  const report = location.state?.report || null;
+  const currentUser = getCurrentUser();
+
+  const ticketNumber = report?.report_identifier || '#CLM-2024-0892';
+  const roomNumber = report?.room_number || 'Kamar 314';
+  const itemTitle = report?.title || report?.description || 'Smartwatch Garmin Venu SQ';
+  const itemMeta = report?.category
+    ? `${report.category} • ${roomNumber}`
+    : `Warna Hitam • ${roomNumber} (Meja Kerja)`;
+  const userName = currentUser?.name?.split(' ')[0] || 'Bpk. Hendra';
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(TICKET_NUMBER);
+      await navigator.clipboard.writeText(ticketNumber);
     } catch {
       // clipboard mungkin tidak tersedia (konteks non-secure)
     }
@@ -57,7 +69,7 @@ export default function UserReportConfirmation() {
       <div className="user-confirmation-frame">
         {/* ---------------------- HEADER KONFIRMASI ---------------------- */}
         <header className="uc-header">
-          <button type="button" className="back-btn" onClick={() => navigate('/user/report-form')} aria-label="Back">
+          <button type="button" className="back-btn" onClick={() => navigate('/user/dashboard')} aria-label="Back">
             <ArrowLeft size={20} />
           </button>
           <div className="uc-success-icon">
@@ -69,7 +81,7 @@ export default function UserReportConfirmation() {
           <span className="uc-badge">KONFIRMASI TIKET</span>
           <h1 className="uc-title">Laporan Berhasil Diterima!</h1>
           <p className="uc-subtitle">
-            Terima kasih, Bpk. Hendra. Tim kami sedang langsung memeriksa Kamar 314 sekarang juga.
+            Terima kasih, {userName}. Tim kami sedang langsung memeriksa {roomNumber} sekarang juga.
           </p>
         </header>
 
@@ -79,7 +91,7 @@ export default function UserReportConfirmation() {
           <div className="uc-ticket-row">
             <div className="uc-ticket-left">
               <span className="uc-ticket-label">NOMOR TIKET</span>
-              <span className="uc-ticket-number">{TICKET_NUMBER}</span>
+              <span className="uc-ticket-number">{ticketNumber}</span>
             </div>
             <button type="button" className={`uc-copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopy}>
               {copied ? <Check size={14} strokeWidth={3} /> : <Copy size={14} />}
@@ -95,8 +107,8 @@ export default function UserReportConfirmation() {
             </span>
             <div className="uc-item-text">
               <span className="uc-item-label">Barang Dilaporkan</span>
-              <span className="uc-item-name">Smartwatch Garmin Venu SQ</span>
-              <span className="uc-item-sub">Warna Hitam • Kamar 314 (Meja Kerja)</span>
+              <span className="uc-item-name">{itemTitle}</span>
+              <span className="uc-item-sub">{itemMeta}</span>
             </div>
           </div>
 
@@ -113,7 +125,7 @@ export default function UserReportConfirmation() {
             </span>
             <span className="uc-estimate-text">
               Estimasi update: <strong>&lt; 30 menit</strong> ke WhatsApp Anda
-              (+62 812-****-8821)
+              ({currentUser?.phone ? `+${currentUser.phone}` : '+62 812-****-8821'})
             </span>
           </div>
         </section>
