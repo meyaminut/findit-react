@@ -22,6 +22,7 @@ import {
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
 import { StorageService } from '../../services/StorageService';
+import ApiService from '../../services/ApiService';
 import { MatchReviewModel } from '../../models/MatchReviewModel';
 import './MatchReviewView.css';
 
@@ -117,44 +118,99 @@ export function MatchReviewView({
     }
   };
 
-  // FIXME (belum di-fix): backend PUT /matches/:id replace SEMUA field,
-  // bukan partial update. Approve/reject match saat ini bisa mengosongkan
-  // activity_note & handover_method yang sudah terisi. Lihat diskusi
-  // checkpoint 3. JANGAN deploy ke production sebelum ini di-fix.
-  const handleConfirmVerification = (ticket, candidate) => {
-    setActionLoading(true);
-    setTimeout(() => {
-      if (candidate?.id) {
-        StorageService.updateMatchStatus(candidate.id, 'approved', {
-          lost_report_id: ticket.id,
-          found_report_id: candidate.found_report_id || candidate.id,
-          verified_by: 'Duty Manager Front Office'
-        });
+  // ── API-integration helpers (API-first, fallback StorageService) ──
+  const isApiCandidate = (candidate) =>
+    Boolean(
+      candidate &&
+      (candidate._apiId != null ||
+        candidate._source === 'api' ||
+        /-API-/i.test(String(candidate.lost_report_id ?? '')) ||
+        /-API-/i.test(String(candidate.found_report_id ?? '')))
+    );
+
+  const findApiMatch = async (candidate) => {
+    const matches = await ApiService.getMatches();
+    if (!Array.isArray(matches) || matches.length === 0) return null;
+
+    let target = null;
+    if (candidate._apiId != null) {
+      target = matches.find((m) => String(m.id ?? m.ID) === String(candidate._apiId)) || null;
+    }
+    if (!target) {
+      const lostId = String(candidate.lost_report_id ?? '').replace(/\D/g, '');
+      const foundId = String(candidate.found_report_id ?? '').replace(/\D/g, '');
+      if (lostId && foundId) {
+        target =
+          matches.find(
+            (m) => String(m.lost_report_id) === lostId && String(m.found_report_id) === foundId
+          ) || null;
       }
-      StorageService.updateTicketStatus(ticket.id, 'Terverifikasi');
-      showToast(`Barang ${ticket.id} berhasil ditandai Terverifikasi!`, 'success');
-      setActionLoading(false);
-      setInspectingTicket(null);
-      refreshData();
-    }, 400);
+    }
+    return target;
   };
 
-  // FIXME (belum di-fix): backend PUT /matches/:id replace SEMUA field,
-  // bukan partial update. Approve/reject match saat ini bisa mengosongkan
-  // activity_note & handover_method yang sudah terisi. Lihat diskusi
-  // checkpoint 3. JANGAN deploy ke production sebelum ini di-fix.
-  const handleRejectRelation = (ticket, candidate) => {
-    setActionLoading(true);
-    setTimeout(() => {
-      if (candidate?.id) {
-        StorageService.updateMatchStatus(candidate.id, 'rejected');
+  // Update match via API; selalu sertakan seluruh field (backend PUT bersifat
+  // replace-all DAN mewajibkan lost_report_id + found_report_id).
+  const apiUpdateMatchStatus = async (candidate, nextStatus) => {
+    const target = await findApiMatch(candidate);
+    if (!target) return false;
+    await ApiService.updateMatchStatus(target.id ?? target.ID, nextStatus, {
+      lost_report_id: target.lost_report_id,
+      found_report_id: target.found_report_id,
+      similarity_score: target.similarity_score ?? 0,
+      verified_by: target.verified_by ?? null,
+      handover_method: target.handover_method ?? '',
+      contact_shared_at: target.contact_shared_at ?? null,
+      activity_note: target.activity_note ?? '',
+    });
+    return true;
+  };
+
+  const syncMatchStatus = async (ticket, candidate, nextStatus, extra = {}) => {
+    if (isApiCandidate(candidate)) {
+      try {
+        const updatedViaApi = await apiUpdateMatchStatus(candidate, nextStatus);
+        if (updatedViaApi) return true;
+      } catch (err) {
+        console.warn('[MatchReview] API update gagal, fallback ke StorageService:', err.message);
       }
-      StorageService.updateTicketStatus(ticket.id, 'Menunggu Verifikasi');
-      showToast(`Kandidat barang temuan dilepaskan dari barang ${ticket.id}.`, 'info');
+    }
+    if (candidate?.id) {
+      StorageService.updateMatchStatus(candidate.id, nextStatus, {
+        lost_report_id: ticket.id,
+        found_report_id: candidate.found_report_id || candidate.id,
+        ...extra,
+      });
+    }
+    return false;
+  };
+
+  const handleConfirmVerification = async (ticket, candidate) => {
+    setActionLoading(true);
+    try {
+      await syncMatchStatus(ticket, candidate, 'approved', {
+        verified_by: 'Duty Manager Front Office',
+      });
+      StorageService.updateTicketStatus(ticket.id, 'Terverifikasi');
+      showToast(`Barang ${ticket.id} berhasil ditandai Terverifikasi!`, 'success');
+    } finally {
       setActionLoading(false);
       setInspectingTicket(null);
       refreshData();
-    }, 400);
+    }
+  };
+
+  const handleRejectRelation = async (ticket, candidate) => {
+    setActionLoading(true);
+    try {
+      await syncMatchStatus(ticket, candidate, 'rejected');
+      StorageService.updateTicketStatus(ticket.id, 'Menunggu Verifikasi');
+      showToast(`Kandidat barang temuan dilepaskan dari barang ${ticket.id}.`, 'info');
+    } finally {
+      setActionLoading(false);
+      setInspectingTicket(null);
+      refreshData();
+    }
   };
 
   const handleExportCSV = () => {
