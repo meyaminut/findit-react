@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Eye, EyeOff, Lock, Mail, RefreshCw, User } from 'lucide-react';
-import { GoogleIcon } from '../components/SocialIcons';
+import { ArrowLeft, Check, Eye, EyeOff, Lock, Mail, Phone, RefreshCw, User } from 'lucide-react';
 import finditLogo from '../../assets/logo-light.png';
 import './UserRegister.css';
 
 /**
  * View Component: UserRegister
- * User portal sign-up screen for the FindIt! application.
- * Flow: "Create Account" success -> /user/welcome, "Log in" -> /user/login.
+ * Pendaftaran murni berbasis kredensial teks.
+ * Urutan field: Nama Lengkap, Email, No. Telepon/WhatsApp,
+ * Kata Sandi, Konfirmasi Kata Sandi.
+ * Flow: "Daftar Akun" -> /user/welcome, "Masuk" -> /user/login.
  */
 export default function UserRegister() {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +24,8 @@ export default function UserRegister() {
   const [isLoading, setIsLoading] = useState(false);
 
   const isEmailValid = email.includes('@') && email.includes('.');
+  const phoneDigits = phone.replace(/\D/g, '');
+  const isPhoneValid = phoneDigits.length >= 10 && phoneDigits.length <= 14;
   const isPasswordValid = password.length >= 8;
   const isConfirmValid = confirmPassword.length > 0 && confirmPassword === password;
 
@@ -33,14 +37,27 @@ export default function UserRegister() {
     return score;
   }, [password]);
 
-  const strengthLabel = passwordStrength >= 3 ? 'Strong password ✨' : passwordStrength === 2 ? 'Good password' : 'Weak password';
+  const strengthLabel =
+    passwordStrength >= 3 ? 'Kata sandi kuat' : passwordStrength === 2 ? 'Kata sandi baik' : 'Kata sandi lemah';
 
   const isFormValid =
-    fullName.trim().length >= 2 && isEmailValid && isPasswordValid && isConfirmValid && agreeTerms;
+    fullName.trim().length >= 2 &&
+    isEmailValid &&
+    isPhoneValid &&
+    isPasswordValid &&
+    isConfirmValid &&
+    agreeTerms;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!isFormValid || isLoading) return;
+    const userData = {
+      fullName: fullName.trim(),
+      email: email.trim().toLowerCase(),
+      phone: phoneDigits,
+      password,
+    };
+    window.localStorage.setItem('findit-registered-user', JSON.stringify(userData));
     setIsLoading(true);
     window.setTimeout(() => {
       setIsLoading(false);
@@ -53,25 +70,28 @@ export default function UserRegister() {
       <div className="user-register-frame">
         {/* Header */}
         <header className="ur-header">
+          <button type="button" className="back-btn" onClick={() => navigate('/user/login')} aria-label="Back">
+            <ArrowLeft size={20} />
+          </button>
           <div className="ur-header-inner">
             <span className="ur-step-badge">
               <span className="ur-step-dot" />
-              STEP 1 OF 1 &bull; QUICK SIGNUP
+              PENDAFTARAN TAMU GRAND MELIÁ
             </span>
-            <img src={finditLogo} alt="Find!t" className="logo-img" />
-            <p className="ur-header-subtitle">Connecting lost belongings with caring humans everywhere.</p>
+            <img src={finditLogo} alt="FindIt!" className="logo-img" />
+            <p className="ur-header-subtitle">Daftar untuk melacak barang tertinggal Anda kapan saja.</p>
           </div>
         </header>
 
         {/* Form Card */}
         <main className="ur-form-card">
-          <h1 className="ur-heading">Join the FindIt! community</h1>
+          <h1 className="ur-heading">Buat Akun Baru</h1>
 
           <form className="ur-form" onSubmit={handleSubmit}>
-            {/* Full name */}
+            {/* Nama Lengkap */}
             <div className="ur-field">
               <label htmlFor="ur-name" className="ur-label">
-                FULL NAME
+                NAMA LENGKAP
               </label>
               <div className="ur-input-wrap">
                 <span className={`ur-input-icon ${fullName.trim().length >= 2 ? 'valid' : ''}`}>
@@ -81,7 +101,7 @@ export default function UserRegister() {
                   id="ur-name"
                   type="text"
                   className="ur-input"
-                  placeholder="Alex Rivera"
+                  placeholder="Nama lengkap Anda"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   autoComplete="name"
@@ -98,7 +118,7 @@ export default function UserRegister() {
             {/* Email */}
             <div className="ur-field">
               <label htmlFor="ur-email" className="ur-label">
-                EMAIL ADDRESS
+                ALAMAT EMAIL
               </label>
               <div className="ur-input-wrap">
                 <span className={`ur-input-icon ${isEmailValid ? 'valid' : ''}`}>
@@ -108,7 +128,7 @@ export default function UserRegister() {
                   id="ur-email"
                   type="email"
                   className="ur-input"
-                  placeholder="you@campus.edu"
+                  placeholder="nama@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -122,20 +142,48 @@ export default function UserRegister() {
               </div>
             </div>
 
-            {/* Password */}
+            {/* Nomor Telepon / WhatsApp */}
             <div className="ur-field">
-              <label htmlFor="ur-password" className="ur-label">
-                PASSWORD
+              <label htmlFor="ur-phone" className="ur-label">
+                NOMOR WHATSAPP / TELEPON ACTIVE
               </label>
               <div className="ur-input-wrap">
-                <span className="ul-input-icon">
+                <span className={`ur-input-icon ${isPhoneValid ? 'valid' : ''}`}>
+                  <Phone size={18} />
+                </span>
+                <input
+                  id="ur-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  className="ur-input"
+                  placeholder="Contoh: 081234567890"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^0-9+]/g, ''))}
+                  autoComplete="tel"
+                  required
+                />
+                {isPhoneValid && (
+                  <span className="ur-input-icon valid">
+                    <Check size={18} />
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Kata Sandi */}
+            <div className="ur-field">
+              <label htmlFor="ur-password" className="ur-label">
+                KATA SANDI
+              </label>
+              <div className="ur-input-wrap">
+                <span className="ur-input-icon">
                   <Lock size={18} />
                 </span>
                 <input
                   id="ur-password"
                   type={showPassword ? 'text' : 'password'}
                   className="ur-input"
-                  placeholder="Create a strong password"
+                  placeholder="Buat kata sandi yang kuat"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="new-password"
@@ -145,7 +193,7 @@ export default function UserRegister() {
                   type="button"
                   className="ur-show-btn"
                   onClick={() => setShowPassword((value) => !value)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -162,16 +210,16 @@ export default function UserRegister() {
                   </div>
                   <span className="ur-strength-info">
                     {strengthLabel}
-                    <span className="ur-strength-count">{password.length} characters</span>
+                    <span className="ur-strength-count">{password.length} karakter</span>
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Confirm password */}
+            {/* Konfirmasi Kata Sandi */}
             <div className="ur-field">
               <label htmlFor="ur-confirm" className="ur-label">
-                CONFIRM PASSWORD
+                KONFIRMASI KATA SANDI
               </label>
               <div className="ur-input-wrap">
                 <span className={`ur-input-icon ${isConfirmValid ? 'valid' : ''}`}>
@@ -181,7 +229,7 @@ export default function UserRegister() {
                   id="ur-confirm"
                   type={showConfirmPassword ? 'text' : 'password'}
                   className="ur-input"
-                  placeholder="Re-enter your password"
+                  placeholder="Ulangi kata sandi Anda"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
@@ -191,7 +239,7 @@ export default function UserRegister() {
                   type="button"
                   className="ur-show-btn"
                   onClick={() => setShowConfirmPassword((value) => !value)}
-                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showConfirmPassword ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -203,7 +251,7 @@ export default function UserRegister() {
               </div>
             </div>
 
-            {/* Terms */}
+            {/* Syarat & Ketentuan */}
             <label className="ur-terms">
               <span
                 role="checkbox"
@@ -221,21 +269,21 @@ export default function UserRegister() {
                 {agreeTerms && <Check size={14} strokeWidth={3} />}
               </span>
               <span className="ur-terms-text">
-                I agree to the{' '}
+                Saya menyetujui{' '}
                 <button
                   type="button"
                   className="ur-terms-btn"
                   onClick={(e) => e.preventDefault()}
                 >
-                  Terms of Service
+                  Syarat &amp; Ketentuan
                 </button>{' '}
-                &amp;{' '}
+                dan{' '}
                 <button
                   type="button"
                   className="ur-terms-btn"
                   onClick={(e) => e.preventDefault()}
                 >
-                  Privacy Policy
+                  Kebijakan Privasi
                 </button>
                 .
               </span>
@@ -243,46 +291,29 @@ export default function UserRegister() {
 
             {/* Submit */}
             <button type="submit" className="ur-submit-btn" disabled={isLoading || !isFormValid}>
-              {isLoading ? 'Creating account...' : (
+              {isLoading ? 'Memproses...' : (
                 <>
-                  Create Account <span className="ur-btn-arrow">&rarr;</span>
+                  Daftar Akun <span className="ur-btn-arrow">&rarr;</span>
                 </>
               )}
             </button>
 
-            {/* Divider + Social */}
-            <div className="ur-divider">OR CONTINUE WITH</div>
-            <div className="ur-social-grid">
-              <button type="button" className="ur-social-btn" onClick={() => navigate('/user/welcome')}>
-                <GoogleIcon size={18} /> Google
-              </button>
-              <button type="button" className="ur-social-btn" onClick={() => navigate('/user/welcome')}>
-                <svg width="18" height="18" viewBox="0 0 384 512" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"
-                  />
-                </svg>
-                Apple
-              </button>
-            </div>
-
-            {/* Privacy info */}
+            {/* Info privasi */}
             <div className="ur-privacy-box">
               <span className="ur-privacy-icon">
                 <Lock size={18} />
               </span>
               <span className="ur-privacy-text">
-                Your contact details remain confidential until you confirm a verified match.
+                Data kontak Anda tetap rahasia hingga tercocokkan dengan barang yang hilang.
               </span>
             </div>
           </form>
 
           {/* Footer */}
           <p className="ur-footer">
-            Already have an account?{' '}
+            Sudah punya akun?{' '}
             <button type="button" className="ur-footer-btn" onClick={() => navigate('/user/login')}>
-              Log in
+              Masuk
             </button>
           </p>
         </main>

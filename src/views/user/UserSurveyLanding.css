@@ -1,5 +1,5 @@
 /* ==========================================================================
-   UserSurveyLanding.css — Halaman "Survei & Deteksi Tamu (Survey Landing)"
+   UserSurveyLanding.css — Halaman "Survey & Deteksi Barang" (Survey Landing)
    Plain CSS mengikuti design token proyek (Primary #00236F, Accent #FEA619).
    ========================================================================== */
 
@@ -22,28 +22,61 @@
   border-bottom: 1px solid #e3e1ec;
   padding: 26px 20px 24px;
   text-align: center;
+  position: relative;
+}
+
+.gs-header .back-btn {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #e3e1ec;
+  background: #ffffff;
+  color: #00236f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 18px -10px rgba(0, 35, 111, 0.35);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.gs-header .back-btn:hover {
+  background: #eef2ff;
 }
 
 .gs-top-bar {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 16px;
+  justify-content: center;
+  gap: 13px;
+  padding-top: 12px;
 }
 
 .gs-hotel-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   background: #00236f;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 8px 18px -8px rgba(0, 35, 111, 0.7);
-  margin-bottom: 4px;
+}
+
+.gs-hotel-id {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
 }
 
 .gs-hotel-name {
@@ -54,478 +87,221 @@
 }
 
 .gs-hotel-sub {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.6px;
   color: #8a8b9a;
   text-transform: uppercase;
 }
 
-.gs-status-badge {
-  position: absolute;
-  top: -4px;
-  right: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: #dcfce7;
-  color: #15803d;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  padding: 6px 11px;
-  border-radius: 999px;
-  border: 1px solid #bbf7d0;
+/* ------------------------------- Rating --------------------------------- */
+.gs-rating {
+  text-align: center;
+  padding: 24px 20px 22px;
 }
 
-.gs-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #16a34a;
-  box-shadow: 0 0 7px rgba(22, 163, 74, 0.9);
-}
-
-.gs-info-box {
-  display: inline-flex;
-  align-items: center;
+.gs-stars {
+  display: flex;
+  justify-content: center;
   gap: 8px;
-  background: #ffffff;
-  border: 1px solid #e3e1ec;
-  border-radius: 999px;
-  padding: 9px 15px;
-  margin-bottom: 16px;
-  box-shadow: 0 6px 14px -10px rgba(0, 35, 111, 0.4);
+  margin-bottom: 12px;
 }
 
-.gs-info-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: rgba(0, 35, 111, 0.08);
-  color: #00236f;
+.gs-star {
+  width: 46px;
+  height: 46px;
+  border: none;
+  background: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 0;
 }
 
-.gs-info-text {
+.gs-star:hover {
+  transform: scale(1.14);
+}
+
+.gs-rating-sub {
+  display: block;
   font-size: 11.5px;
   font-weight: 700;
-  color: #444651;
-}
-
-.gs-greeting {
-  font-size: 21px;
-  font-weight: 800;
-  color: #1a1b21;
-  letter-spacing: -0.3px;
-  margin: 0 0 8px;
-}
-
-.gs-desc {
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.6;
-  color: #444651;
-  margin: 0 auto;
-  max-width: 400px;
-}
-
-/* ------------------------------- Hero ---------------------------------- */
-.gs-hero {
-  position: relative;
-  height: 168px;
-  margin: 18px 20px 0;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 16px 30px -16px rgba(0, 35, 111, 0.55);
-}
-
-.gs-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.gs-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 35, 111, 0.1) 0%, rgba(0, 35, 111, 0.7) 100%);
-}
-
-.gs-hero-badge {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.92);
-  color: #00236f;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.4);
-}
-
-/* ------------------------------ Rating --------------------------------- */
-.gs-section {
-  padding: 22px 20px 0;
-}
-
-.gs-rating-section {
-  text-align: center;
-}
-
-.gs-section-title {
-  font-size: 17px;
-  font-weight: 800;
-  color: #1a1b21;
-  letter-spacing: -0.3px;
-  margin: 0 0 7px;
-}
-
-.gs-section-sub {
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.55;
-  color: #444651;
-  margin: 0 auto 16px;
-  max-width: 360px;
-}
-
-.gs-rating-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 7px;
-}
-
-.gs-rating-item {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  background: #ffffff;
-  border: 1.5px solid #e3e1ec;
-  border-radius: 14px;
-  padding: 12px 4px 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.gs-rating-emoji {
-  font-size: 25px;
-  line-height: 1;
-  filter: grayscale(0.3);
-  transition: transform 0.2s, filter 0.2s;
-}
-
-.gs-rating-label {
-  font-size: 10px;
-  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
   color: #8a8b9a;
-  transition: color 0.2s;
 }
 
-.gs-rating-item:hover {
-  border-color: #febf4d;
-  transform: translateY(-2px);
-}
-
-.gs-rating-item:hover .gs-rating-emoji {
-  filter: grayscale(0);
-}
-
-.gs-rating-item.selected {
-  border-color: #fea619;
-  background: linear-gradient(180deg, #fff7e8 0%, #ffffff 100%);
-  box-shadow: 0 10px 22px -12px rgba(254, 166, 25, 0.9);
-}
-
-.gs-rating-item.selected .gs-rating-emoji {
-  filter: grayscale(0);
-  transform: scale(1.12);
-}
-
-.gs-rating-item.selected .gs-rating-label {
-  color: #b45309;
-}
-
-/* --------------------------- Detection Card ---------------------------- */
-.gs-detect {
-  margin: 22px 20px 0;
-  background: #f4f3fa;
-  border: 1px solid #e3e1ec;
-  border-radius: 18px;
-  padding: 20px 16px;
+/* ------------------------ Headline Deteksi Barang ----------------------- */
+.gs-headline {
   text-align: center;
+  padding: 0 24px;
+  margin-bottom: 24px;
 }
 
-.gs-detect-badge {
+.gs-headline-badge {
   display: inline-flex;
   background: rgba(0, 35, 111, 0.09);
   color: #00236f;
   font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 1px;
-  padding: 6px 13px;
+  letter-spacing: 1.2px;
+  padding: 6px 14px;
   border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.gs-title {
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #1a1b21;
+  letter-spacing: -0.4px;
+  margin: 0 0 10px;
+}
+
+.gs-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.65;
+  color: #444651;
+  margin: 0;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* -------------------------- Opsi Keputusan ------------------------------ */
+.gs-options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 20px;
+}
+
+.gs-option {
+  background: #ffffff;
+  border: 1.5px solid #e3e1ec;
+  border-radius: 18px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 8px 20px -16px rgba(0, 35, 111, 0.35);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.gs-option:active {
+  transform: scale(0.992);
+}
+
+.gs-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.gs-detect-title {
-  font-size: 16.5px;
+.gs-option-tag {
+  font-size: 9.5px;
   font-weight: 800;
-  line-height: 1.4;
-  color: #1a1b21;
-  letter-spacing: -0.3px;
-  margin: 0 0 13px;
+  letter-spacing: 1px;
+  padding: 5px 11px;
+  border-radius: 999px;
 }
 
-.gs-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: #ffffff;
-  border: 1px solid #e3e1ec;
-  border-radius: 12px;
-  padding: 12px 13px;
-  text-align: left;
-  margin-bottom: 15px;
+.gs-option-warn .gs-option-tag {
+  background: #fff3dd;
+  color: #b45309;
 }
 
-.gs-notice-icon {
+.gs-option-safe .gs-option-tag {
+  background: #e8eefb;
+  color: #1d4ed8;
+}
+
+.gs-option-icon {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: rgba(22, 163, 74, 0.12);
-  color: #15803d;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.gs-notice-text {
-  font-size: 11.5px;
-  font-weight: 500;
-  line-height: 1.55;
-  color: #444651;
-  margin: 0;
+.gs-option-warn .gs-option-icon {
+  background: #fea619;
+  color: #ffffff;
+  box-shadow: 0 8px 18px -8px rgba(254, 166, 25, 0.9);
 }
 
-.gs-action {
+.gs-option-safe .gs-option-icon {
+  background: rgba(29, 78, 216, 0.1);
+  color: #1d4ed8;
+}
+
+.gs-option-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #1a1b21;
+  letter-spacing: -0.3px;
+  margin: 0 0 6px;
+}
+
+.gs-option-desc {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: #444651;
+  margin: 0 0 16px;
+}
+
+.gs-option-btn {
   width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border: none;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 800;
-  padding: 14px 20px;
+  padding: 13px 18px;
   border-radius: 999px;
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
 }
 
-.gs-action + .gs-action {
-  margin-top: 10px;
-}
-
-.gs-action-emoji {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.gs-action-yes {
+.gs-btn-warn {
   background: #fea619;
   color: #1a1b21;
-  box-shadow: 0 12px 24px -10px rgba(254, 166, 25, 0.85);
+  box-shadow: 0 12px 24px -12px rgba(254, 166, 25, 0.85);
 }
 
-.gs-action-yes:hover {
+.gs-btn-warn:hover {
   background: #f59e0b;
   transform: translateY(-1px);
 }
 
-.gs-action-no {
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 12px 24px -10px rgba(37, 99, 235, 0.75);
+.gs-btn-safe {
+  background: #eef2fb;
+  color: #1d4ed8;
+  border: 1px solid #dbe3f3;
 }
 
-.gs-action-no:hover {
-  background: #1d4ed8;
+.gs-btn-safe:hover {
+  background: #e3eaf8;
   transform: translateY(-1px);
 }
 
-/* -------------------------- Success (Tidak) ---------------------------- */
-.gs-thanks {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.gs-thanks-icon {
-  width: 66px;
-  height: 66px;
-  border-radius: 50%;
-  background: rgba(22, 163, 74, 0.12);
-  color: #16a34a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 8px rgba(22, 163, 74, 0.06);
-  margin-bottom: 4px;
-}
-
-.gs-thanks-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: #1a1b21;
-  margin: 0;
-}
-
-.gs-thanks-text {
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.6;
-  color: #444651;
-  margin: 0;
-}
-
-.gs-thanks-back {
-  background: none;
-  border: none;
-  color: #00236f;
-  font-size: 12.5px;
-  font-weight: 800;
-  cursor: pointer;
-  padding: 8px;
-  margin-top: 4px;
-  font-family: inherit;
-}
-
-.gs-thanks-back:hover {
-  text-decoration: underline;
-}
-
-/* ------------------------- Footer Layanan Tamu ------------------------- */
-.gs-services {
-  margin: 22px 20px 0;
-  background: #ffffff;
-  border: 1px solid #e3e1ec;
-  border-radius: 18px;
-  padding: 18px 16px;
-  box-shadow: 0 6px 16px -12px rgba(0, 35, 111, 0.35);
-}
-
-.gs-services-head {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-bottom: 12px;
-}
-
-.gs-services-icon {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(0, 35, 111, 0.08);
-  color: #00236f;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gs-services-title {
-  display: block;
-  font-size: 14px;
-  font-weight: 800;
-  color: #1a1b21;
-}
-
-.gs-services-sub {
-  display: block;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #8a8b9a;
-  margin-top: 2px;
-}
-
-.gs-services-text {
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.55;
-  color: #444651;
-  margin: 0 0 14px;
-}
-
-.gs-contact-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.gs-contact-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: none;
-  font-size: 12.5px;
-  font-weight: 800;
-  padding: 13px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.gs-contact-wa {
-  background: #16a34a;
-  color: #ffffff;
-  box-shadow: 0 10px 18px -10px rgba(22, 163, 74, 0.7);
-}
-
-.gs-contact-wa:hover {
-  background: #15803d;
-}
-
-.gs-contact-phone {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.gs-contact-phone:hover {
-  background: #bfdbfe;
-}
-
-.gs-encrypt {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 600;
-  color: #8a8b9a;
+/* ---------------------------- Footer Catatan ---------------------------- */
+.gs-footnote {
   text-align: center;
-  padding: 18px 20px 26px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8a8b9a;
+  line-height: 1.6;
+  padding: 16px 24px 28px;
   margin: 0;
-}
-
-.gs-encrypt svg {
-  color: #475569;
 }
 
 /* ------------------------------- Responsive ---------------------------- */

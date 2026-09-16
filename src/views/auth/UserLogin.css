@@ -35,7 +35,7 @@
 .ul-header {
   position: relative;
   background: linear-gradient(160deg, #0b2f8a 0%, var(--ul-blue) 55%, #001a57 100%);
-  padding: 34px 28px 58px;
+  padding: 26px 28px 58px;
   text-align: center;
   overflow: hidden;
   flex-shrink: 0;
@@ -71,38 +71,8 @@
   align-items: center;
 }
 
-.ul-radar-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  margin-bottom: 18px;
-  backdrop-filter: blur(6px);
-}
-
-.ul-radar-badge .ul-radar-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.9);
-  animation: ulPulse 1.6s ease-in-out infinite;
-}
-
-@keyframes ulPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
-}
-
 .logo-img {
-  height: 36px;
+  height: 54px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -228,27 +198,6 @@
   color: var(--ul-text);
 }
 
-.ul-forgot-row {
-  text-align: right;
-  margin: -4px 0 18px;
-}
-
-.ul-forgot-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--ul-blue);
-  cursor: pointer;
-}
-
-.ul-forgot-btn:hover {
-  color: var(--ul-accent-hover);
-  text-decoration: underline;
-}
-
 /* ---------- Primary Button ---------- */
 .ul-submit-btn {
   width: 100%;
@@ -285,54 +234,6 @@
 
 .ul-submit-btn:hover:not(:disabled) .ul-btn-arrow {
   transform: translateX(4px);
-}
-
-/* ---------- Divider ---------- */
-.ul-divider {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 24px 0 18px;
-  color: #a3a2af;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-}
-
-.ul-divider::before,
-.ul-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--ul-border);
-}
-
-/* ---------- Social Buttons ---------- */
-.ul-social-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.ul-social-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  background: #ffffff;
-  border: 1.5px solid var(--ul-border);
-  border-radius: 999px;
-  padding: 13px 14px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ul-text);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.ul-social-btn:hover {
-  background: var(--ul-input);
 }
 
 /* ---------- Footer ---------- */

@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AlarmClock,
+  ArrowLeft,
   Bell,
-  Bookmark,
   Check,
   Copy,
-  MessageCircle,
+  Lock,
 } from 'lucide-react';
 import './UserReportConfirmation.css';
 
@@ -24,14 +25,8 @@ const STEPS = [
   {
     state: 'pending',
     number: 3,
-    title: 'Verifikasi Otentifikasi & Notifikasi',
-    desc: 'Pencocokan foto fisik & pesan konfirmasi ke Anda.',
-  },
-  {
-    state: 'pending',
-    number: 4,
-    title: 'Opsi Pengambilan Aman',
-    desc: 'Ambil langsung di Front Desk atau kirim ekspres via kurir.',
+    title: 'Menunggu Verifikasi Admin',
+    desc: 'Pencocokan laporan oleh admin & tim verifikasi sebelum hasil akhir.',
   },
 ];
 
@@ -44,6 +39,7 @@ const TICKET_NUMBER = '#CLM-2024-0892';
  * serta aksi hubungi/ simpan. Di-render setelah submit UserReportForm.
  */
 export default function UserReportConfirmation() {
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -61,6 +57,9 @@ export default function UserReportConfirmation() {
       <div className="user-confirmation-frame">
         {/* ---------------------- HEADER KONFIRMASI ---------------------- */}
         <header className="uc-header">
+          <button type="button" className="back-btn" onClick={() => navigate('/user/report-form')} aria-label="Back">
+            <ArrowLeft size={20} />
+          </button>
           <div className="uc-success-icon">
             <Bell size={44} strokeWidth={2} />
             <span className="uc-success-check">
@@ -84,7 +83,7 @@ export default function UserReportConfirmation() {
             </div>
             <button type="button" className={`uc-copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopy}>
               {copied ? <Check size={14} strokeWidth={3} /> : <Copy size={14} />}
-              {copied ? 'Tersalin' : '📋 Salin'}
+              {copied ? 'Tersalin' : 'Salin'}
             </button>
           </div>
 
@@ -102,7 +101,10 @@ export default function UserReportConfirmation() {
           </div>
 
           {/* Status Badge */}
-          <span className="uc-status-badge">🟡 Pencarian Aktif (Housekeeping On-Duty)</span>
+          <span className="uc-status-badge">
+            <span className="uc-status-dot" />
+            Pencarian Aktif (Housekeeping On-Duty)
+          </span>
 
           {/* Estimasi Box */}
           <div className="uc-estimate">
@@ -120,7 +122,7 @@ export default function UserReportConfirmation() {
         <section className="uc-timeline">
           <div className="uc-timeline-head">
             <span className="uc-timeline-title">Proses Berikutnya</span>
-            <span className="uc-stage-badge">Tahap 2 dari 4</span>
+            <span className="uc-stage-badge">Tahap 2 dari 3</span>
           </div>
 
           <ol className="uc-steps">
@@ -155,19 +157,9 @@ export default function UserReportConfirmation() {
         </section>
 
         {/* ----------------------- ACTION BUTTONS ------------------------ */}
-        <div className="uc-actions">
-          <button type="button" className="uc-primary-btn">
-            <MessageCircle size={18} />
-            Hubungi Duty Manager via WhatsApp
-          </button>
-          <button type="button" className="uc-secondary-btn">
-            <Bookmark size={17} />
-            Simpan Tautan Cek Status
-          </button>
-        </div>
-
         <p className="uc-footer-hint">
-          🔒 Data laporan dienkripsi &amp; hanya diakses tim verifikasi internal.
+          <Lock size={12} />
+          Data laporan dienkripsi &amp; hanya diakses tim verifikasi internal.
         </p>
       </div>
     </div>

@@ -26,6 +26,29 @@
   overflow: hidden;
 }
 
+.back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 .uc-header::before {
   content: '';
   position: absolute;
@@ -228,6 +251,14 @@
   margin-top: 14px;
 }
 
+.uc-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fea619;
+  box-shadow: 0 0 0 3px rgba(254, 166, 25, 0.25);
+}
+
 .uc-estimate {
   display: flex;
   align-items: center;
@@ -428,59 +459,16 @@
   color: #a0a1ae;
 }
 
-/* --------------------------- Action Buttons ----------------------------- */
-.uc-actions {
-  padding: 20px 20px 0;
+.uc-footer-hint {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.uc-primary-btn,
-.uc-secondary-btn {
-  width: 100%;
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: none;
-  font-size: 13.5px;
-  font-weight: 800;
-  padding: 15px 20px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.uc-primary-btn {
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 12px 24px -10px rgba(37, 99, 235, 0.75);
-}
-
-.uc-primary-btn:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-.uc-secondary-btn {
-  background: #eef2ff;
-  color: #00236f;
-  border: 1.5px solid #dfe6ff;
-}
-
-.uc-secondary-btn:hover {
-  background: #e0e7ff;
-  transform: translateY(-1px);
-}
-
-.uc-footer-hint {
+  gap: 6px;
   font-size: 10px;
   font-weight: 600;
   color: #8a8b9a;
   text-align: center;
-  padding: 18px 20px 28px;
+  padding: 20px 20px 28px;
   margin: 0;
 }
 
