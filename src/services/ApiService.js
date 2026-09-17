@@ -126,6 +126,7 @@ export async function createReport(reportData) {
     title: reportData.title || reportData.itemName || 'Barang',
     description: reportData.description || '',
     category: reportData.category || 'Lainnya',
+    room_number: reportData.room_number || reportData.roomNumber || '',
     location: reportData.location || reportData.locationFound || reportData.locationLost || '',
     photo_url: reportData.photo_url || reportData.photoUrl || '',
     status: reportData.status || 'pending',
@@ -134,6 +135,38 @@ export async function createReport(reportData) {
   };
   const data = await apiClient.post('/reports', payload);
   return data?.data || data;
+}
+
+/**
+ * Upload satu file foto (multipart) ke backend /upload.
+ * Mengembalikan URL foto yang siap disimpan ke report.photo_url.
+ */
+export async function uploadPhoto(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const data = await apiClient.post('/upload', formData);
+  return data?.data?.url || data?.url || '';
+}
+
+/**
+ * Buat laporan kehilangan (lost) dari form laporan kehilangan bersama
+ * yang dipakai halaman user/admin. Selalu type:'lost' + room_number
+ * agar nama & kamar konsisten tersimpan di report (lihat MatchReviewView).
+ */
+export async function createLostReport(payload = {}) {
+  const currentUser = getCurrentUser();
+  const data = await createReport({
+    user_id: payload.user_id || currentUser?.id || currentUser?.ID || 1,
+    type: 'lost',
+    title: payload.title || 'Barang Hilang',
+    description: payload.description || '',
+    category: payload.category || 'Lainnya',
+    room_number: payload.room_number || '',
+    location: payload.location || '',
+    photo_url: payload.photo_url || '',
+    status: payload.status || 'baru',
+  });
+  return data;
 }
 
 export async function updateReport(id, reportData) {
@@ -231,8 +264,8 @@ export function mapApiReportToLocal(apiReport) {
     return {
       id: `#TK-API-${apiReport.id || apiReport.ID}`,
       _apiId: apiReport.id || apiReport.ID,
-      guestName: apiReport.user?.name || 'Tamu',
-      roomNumber: apiReport.location || '-',
+      guestName: apiReport.user?.name || apiReport.guest_name || apiReport.name || 'Tamu',
+      roomNumber: apiReport.room_number || apiReport.roomNumber || '-',
       roomType: '-',
       phone: '-',
       email: apiReport.user?.email || '-',
@@ -255,7 +288,7 @@ export function mapApiReportToLocal(apiReport) {
       id: `#LF-API-${apiReport.id || apiReport.ID}`,
       _apiId: apiReport.id || apiReport.ID,
       name: apiReport.title || 'Barang Temuan',
-      roomNumber: '-',
+      roomNumber: apiReport.room_number || apiReport.roomNumber || '-',
       category: apiReport.category || 'Lainnya',
       locationFound: apiReport.location || '-',
       storageLocation: 'Brankas Utama FO',
@@ -320,6 +353,8 @@ const ApiService = {
   getLostReports,
   getReportById,
   createReport,
+  uploadPhoto,
+  createLostReport,
   updateReport,
   deleteReport,
   getMatches,

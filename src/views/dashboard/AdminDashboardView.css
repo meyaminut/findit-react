@@ -212,6 +212,8 @@
   flex-direction: column;
   min-width: 0;
   background: #f8fafc;
+  position: relative;
+  height: 100vh;
   overflow-y: auto;
 }
 
@@ -1684,6 +1686,19 @@
 }
 
 /* ==========================================================================
+   Quick Report Modal (shared ReportLostForm) scroll
+   ========================================================================== */
+.quick-report-form-scroll {
+  max-height: 68vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.quick-report-form-scroll .gr-form {
+  margin-top: 0;
+}
+
+/* ==========================================================================
    10. Responsiveness
    ========================================================================== */
 @media (max-width: 1180px) {
@@ -1706,6 +1721,10 @@
     width: 100%;
     height: auto;
     position: relative;
+  }
+  .dashboard-main-viewport {
+    height: auto;
+    overflow-y: visible;
   }
   .kpi-metrics-grid {
     grid-template-columns: 1fr;

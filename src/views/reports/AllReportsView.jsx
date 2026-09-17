@@ -128,9 +128,9 @@ export function AllReportsView({
               category: r.category || 'Lainnya',
               photoUrl: resolveMediaUrl(r.photo_url || ''),
               reporter: {
-                name: r.user?.name || (isLost ? 'Tamu' : 'Staf Hotel'),
+                name: r.user?.name || r.guest_name || r.name || (isLost ? 'Tamu' : 'Staf Hotel'),
                 badge: isLost ? 'Tamu' : 'Staf HK',
-                contact: r.room_number ? `Kamar ${r.room_number}` : (r.location || '-')
+                contact: r.room_number ? `Kamar ${r.room_number}` : '-'
               },
               location: formatReportLocation(r.location, r.room_number),
               timestamp: `${dateStr}, ${timeStr} WIB`,

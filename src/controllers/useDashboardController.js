@@ -118,13 +118,17 @@ export function useDashboardController() {
               id: r.report_identifier || `#RPT-${r.id || r.ID}`,
               _apiId: r.id || r.ID,
               ticketNumber: `RPT-${r.id || r.ID}`,
-              guestName: r.user?.name || (isLost ? 'Tamu' : 'Staf'),
+              guestName: r.user?.name || r.guest_name || r.name || (isLost ? 'Tamu' : 'Staf'),
               isVip: false,
-              room: r.room_number ? `Kamar ${r.room_number}` : '-',
+              room: (r.room_number || r.roomNumber)
+                ? (String(r.room_number || r.roomNumber).toLowerCase().startsWith('kamar')
+                    ? (r.room_number || r.roomNumber)
+                    : `Kamar ${r.room_number || r.roomNumber}`)
+                : '-',
               itemTitle: r.title || 'Barang',
               category: (r.category || 'general').toLowerCase(),
               iconType: isLost ? 'alert-circle' : 'box',
-              locationDetail: r.location || '-',
+              locationDetail: r.location || r.room_number || '-',
               reportTime: `${dateStr}, ${timeStr} WIB`,
               status: mapApiStatus(r.status, r.type),
               statusType: mapApiStatusType(r.status, r.type),
@@ -374,74 +378,36 @@ export function useDashboardController() {
     }
   };
 
-  const handleSaveQuickReport = async (reportData) => {
-    setActionLoading(true);
+  const handleSaveQuickReport = (result) => {
+    // Dipanggil oleh QuickReportModal setelah ReportLostForm sukses submit.
+    // Report sudah dibuat via adminReportApi (services/lostReport) — API lost
+    // report (online) atau tiket lokal (offline). Cukup tampilkan di daftar.
+    setIsQuickReportOpen(false);
 
-    // Try to submit to live API first
-    if (apiOnline) {
-      try {
-        const apiResult = await ApiService.createReport({
-          type: 'found',
-          title: reportData.title || reportData.brandAndModel || 'Barang Temuan',
-          description: reportData.description || reportData.colorAndFeatures || '',
-          category: reportData.category || 'Lainnya',
-          location: reportData.location || reportData.room || '',
-          user_id: 1,
-          status: 'pending',
-          item_date: new Date().toISOString().split('T')[0],
-        });
-        setActionLoading(false);
-        setIsQuickReportOpen(false);
-        showToastCallback(`Laporan berhasil dikirim ke server API (ID: ${apiResult?.id || apiResult?.ID || 'baru'}).`, 'success');
-        
-        // Add to local list
-        const newTicket = {
-          id: `#RPT-${apiResult?.id || apiResult?.ID || Date.now()}`,
-          _apiId: apiResult?.id || apiResult?.ID,
-          ticketNumber: `RPT-${apiResult?.id || apiResult?.ID || Date.now()}`,
-          guestName: reportData.guestName || 'Staf FO',
-          isVip: reportData.isVip || false,
-          room: reportData.room || reportData.location || 'Lobby Utama',
-          itemTitle: reportData.title || 'Barang Tertinggal',
-          category: reportData.category || 'general',
-          iconType: 'box',
-          locationDetail: reportData.location || 'Area Hotel',
-          reportTime: 'Baru saja',
-          status: 'Baru Masuk',
-          statusType: 'gray',
-          priorityTag: reportData.isVip ? 'Prioritas VIP' : null,
-          _source: 'api',
-        };
-        setTickets((prev) => [newTicket, ...prev]);
-        return;
-      } catch (err) {
-        console.warn('[Dashboard] API createReport failed, falling back:', err.message);
-      }
-    }
+    const report = result?.data || {};
+    const newTicket = {
+      id: report.report_identifier || report.id || `#RPT-${Date.now()}`,
+      _apiId: report.id ?? report.ID ?? null,
+      ticketNumber: `RPT-${report.id || report.ID || Date.now()}`,
+      guestName: report.user?.name || report.guestName || 'Tamu',
+      isVip: false,
+      room: report.room_number || report.roomNumber || '-',
+      itemTitle: report.title || report.itemName || 'Barang',
+      category: (report.category || 'general').toLowerCase(),
+      iconType: 'alert-circle',
+      locationDetail: report.location || report.locationLost || report.room_number || '-',
+      reportTime: 'Baru saja',
+      status: report.status === 'Menunggu Verifikasi' ? 'Menunggu Verifikasi' : 'Baru Masuk',
+      statusType: 'gray',
+      priorityTag: null,
+      type: report.type || 'lost',
+      description: report.description || report.secretDetail || '',
+      _source: 'api',
+    };
 
-    // Fallback to local
-    const res = await DashboardController.createIncident(reportData);
-    setActionLoading(false);
-    if (res.success) {
-      setIsQuickReportOpen(false);
-      showToastCallback(res.message, 'success');
-      const newTicket = {
-        id: res.identifier,
-        ticketNumber: res.identifier.replace('#', ''),
-        guestName: reportData.guestName || 'Tamu FO',
-        isVip: reportData.isVip || false,
-        room: reportData.room || 'Lobby Utama',
-        itemTitle: reportData.title || 'Barang Tertinggal',
-        category: reportData.category || 'general',
-        iconType: 'box',
-        locationDetail: reportData.location || 'Area Hotel',
-        reportTime: 'Baru saja',
-        status: 'Baru Masuk',
-        statusType: 'gray',
-        priorityTag: reportData.isVip ? 'Prioritas VIP' : null
-      };
-      setTickets((prev) => [newTicket, ...prev]);
-    }
+    setTickets((prev) => [newTicket, ...prev.filter((t) => t._source !== 'api')]);
+    setApiReloadKey((prev) => prev + 1);
+    showToastCallback('Laporan kehilangan berhasil dibuat & masuk ke antrean Verifikasi.', 'success');
   };
 
   return {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   FileText, 
   Plus, 
@@ -11,13 +11,7 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Folder, 
-  RotateCcw,
-  Shield,
-  Layers,
-  MapPin,
-  Clock,
-  User,
-  Tag
+  Shield
 } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
@@ -41,23 +35,8 @@ export function OperationalReportsView({
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [previewReport, setPreviewReport] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
-
-  // Form State for creating new report
-  const [formData, setFormData] = useState({
-    title: '',
-    reportType: 'found_item',
-    category: 'Elektronik & Gadget',
-    reporterName: '',
-    reporterContact: '',
-    location: '',
-    priority: 'Normal',
-    officialOfficer: 'Admin FO On Duty',
-    status: 'Diterbitkan',
-    description: ''
-  });
 
   const refreshData = () => {
     setReports(StorageService.getReports());
@@ -110,45 +89,6 @@ export function OperationalReportsView({
       return true;
     });
   }, [reports, typeFilter, statusFilter, searchQuery]);
-
-  // Handle Form Submission
-  const handleSaveNewReport = (e) => {
-    e.preventDefault();
-    if (!formData.title.trim()) {
-      alert('Mohon masukkan judul laporan.');
-      return;
-    }
-
-    StorageService.addReport({
-      title: formData.title,
-      reportType: formData.reportType,
-      category: formData.category,
-      reporterName: formData.reporterName || 'Staf Front Office',
-      reporterContact: formData.reporterContact || '-',
-      location: formData.location || 'Area Hotel',
-      priority: formData.priority,
-      officialOfficer: formData.officialOfficer || 'Sarah Jenkins (FO Supervisor)',
-      status: formData.status,
-      description: formData.description || 'Tidak ada uraian kronologi tambahan.'
-    });
-
-    setIsCreateModalOpen(false);
-    setFormData({
-      title: '',
-      reportType: 'found_item',
-      category: 'Elektronik & Gadget',
-      reporterName: '',
-      reporterContact: '',
-      location: '',
-      priority: 'Normal',
-      officialOfficer: 'Admin FO On Duty',
-      status: 'Diterbitkan',
-      description: ''
-    });
-
-    refreshData();
-    showToast('Laporan operasional baru berhasil dibuat & disimpan!', 'success');
-  };
 
   const handleDeleteReport = (reportId) => {
     if (window.confirm(`Apakah Anda yakin ingin menghapus laporan ${reportId}?`)) {
@@ -238,7 +178,7 @@ export function OperationalReportsView({
             <button
               type="button"
               className="btn-create-report-primary"
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => onNavChange && onNavChange('Buat Laporan')}
             >
               <Plus size={16} />
               <span>+ Buat Laporan Baru</span>
@@ -391,7 +331,7 @@ export function OperationalReportsView({
                           <button
                             type="button"
                             className="btn-create-report-primary"
-                            onClick={() => setIsCreateModalOpen(true)}
+                            onClick={() => onNavChange && onNavChange('Buat Laporan')}
                           >
                             <Plus size={15} />
                             <span>Buat Laporan Sekarang</span>
@@ -461,177 +401,7 @@ export function OperationalReportsView({
         </main>
       </div>
 
-      {/* Modal 1: Buat Laporan Baru */}
-      {isCreateModalOpen && (
-        <div className="reports-modal-backdrop" onClick={() => setIsCreateModalOpen(false)}>
-          <div className="reports-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-row">
-              <div className="modal-header-left">
-                <FileText size={20} style={{ color: '#1d4ed8' }} />
-                <h3 className="modal-title">Buat Laporan Operasional Baru</h3>
-              </div>
-              <button
-                type="button"
-                className="btn-close-modal"
-                onClick={() => setIsCreateModalOpen(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveNewReport}>
-              <div className="modal-form-content">
-                <div className="form-field-group">
-                  <label className="form-field-label">Judul Laporan *</label>
-                  <input
-                    type="text"
-                    required
-                    className="form-input-control"
-                    placeholder="Contoh: Laporan Penemuan Jam Tangan di Kamar 502"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-grid-2col">
-                  <div className="form-field-group">
-                    <label className="form-field-label">Tipe Laporan</label>
-                    <select
-                      className="form-select-control"
-                      value={formData.reportType}
-                      onChange={(e) => setFormData({ ...formData, reportType: e.target.value })}
-                    >
-                      <option value="found_item">Barang Temuan HK</option>
-                      <option value="lost_claim">Klaim Kehilangan Tamu</option>
-                      <option value="handover_report">Berita Acara Handover</option>
-                      <option value="audit_recap">Rekapitulasi Shift</option>
-                    </select>
-                  </div>
-
-                  <div className="form-field-group">
-                    <label className="form-field-label">Kategori Barang</label>
-                    <select
-                      className="form-select-control"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    >
-                      <option value="Elektronik & Gadget">Elektronik &amp; Gadget</option>
-                      <option value="Aksesoris & Jam">Aksesoris &amp; Jam</option>
-                      <option value="Perhiasan & Berharga">Perhiasan &amp; Berharga</option>
-                      <option value="Bagasi & Koper">Bagasi &amp; Koper</option>
-                      <option value="Pakaian & Sandang">Pakaian &amp; Sandang</option>
-                      <option value="Dokumen & Identitas">Dokumen &amp; Identitas</option>
-                      <option value="Lain-lain">Lain-lain</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-grid-2col">
-                  <div className="form-field-group">
-                    <label className="form-field-label">Nama Pelapor / Staf / Tamu</label>
-                    <input
-                      type="text"
-                      className="form-input-control"
-                      placeholder="Contoh: Siti Rahma (HK Lt. 5)"
-                      value={formData.reporterName}
-                      onChange={(e) => setFormData({ ...formData, reporterName: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-field-group">
-                    <label className="form-field-label">Kontak / No. Kamar / Ext</label>
-                    <input
-                      type="text"
-                      className="form-input-control"
-                      placeholder="Contoh: Kamar 502 / Ext 5002"
-                      value={formData.reporterContact}
-                      onChange={(e) => setFormData({ ...formData, reporterContact: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-grid-2col">
-                  <div className="form-field-group">
-                    <label className="form-field-label">Lokasi Penemuan / Kejadian</label>
-                    <input
-                      type="text"
-                      className="form-input-control"
-                      placeholder="Contoh: Meja Nakas Kamar 502"
-                      value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-field-group">
-                    <label className="form-field-label">Tingkat Prioritas</label>
-                    <select
-                      className="form-select-control"
-                      value={formData.priority}
-                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="Tinggi">Tinggi</option>
-                      <option value="Urgent">Urgent (Segera)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-grid-2col">
-                  <div className="form-field-group">
-                    <label className="form-field-label">Petugas Pemeriksa (FO / Admin)</label>
-                    <input
-                      type="text"
-                      className="form-input-control"
-                      placeholder="Nama Admin"
-                      value={formData.officialOfficer}
-                      onChange={(e) => setFormData({ ...formData, officialOfficer: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="form-field-group">
-                    <label className="form-field-label">Status Awal</label>
-                    <select
-                      className="form-select-control"
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    >
-                      <option value="Diterbitkan">Diterbitkan</option>
-                      <option value="Terverifikasi">Terverifikasi</option>
-                      <option value="Selesai">Selesai</option>
-                      <option value="Draft">Draft</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-field-group">
-                  <label className="form-field-label">Rincian Narasi &amp; Kronologi Laporan</label>
-                  <textarea
-                    className="form-textarea-control"
-                    placeholder="Tuliskan secara lengkap detail kronologi, kondisi fisik barang, tindakan penanganan, dan lokasi brankas penyimpanan..."
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-footer-actions">
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
-                  Batal
-                </button>
-                <button type="submit" className="btn-submit-save">
-                  Simpan &amp; Terbitkan Laporan
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal 2: Pratinjau Lembar Laporan Resmi Hotel (Official Document) */}
+      {/* Modal 1: Pratinjau Lembar Laporan Resmi Hotel (Official Document) */}
       {previewReport && (
         <div className="reports-modal-backdrop" onClick={() => setPreviewReport(null)}>
           <div className="reports-modal-card" style={{ maxWidth: '780px' }} onClick={(e) => e.stopPropagation()}>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   CheckCircle2, 
   Search, 
@@ -7,17 +7,13 @@ import {
   Trash2, 
   ArrowRight, 
   ShieldCheck, 
-  User, 
   MapPin, 
   Clock, 
   X, 
-  Layers, 
 Check,
   AlertCircle,
   Package,
-  Link2,
-  RotateCcw,
-  ExternalLink
+  Link2
 } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
@@ -103,8 +99,8 @@ const buildApiTickets = (reports, matches) => {
       _apiId: reportId,
       _source: 'api',
       priority: r.priority || 'Reguler',
-      guestName: r.user?.name || 'Tamu',
-      roomNumber: r.room_number || '',
+      guestName: r.user?.name || r.name || r.guest_name || 'Tamu',
+      roomNumber: r.room_number || r.roomNumber || '',
       roomType: r.room_type || '',
       itemName: r.title || 'Barang',
       category: r.category || 'Lainnya',
@@ -209,7 +205,10 @@ export function MatchReviewView({
   const [tickets, setTickets] = useState(() => StorageService.getTickets());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  // Default filter = antrean berjalan: hanya 'baru'/'dicocokkan'.
+  // Laporan bersifat 'dikembalikan'/'diserahkan' (Sudah Diserahkan ke tamu)
+  // otomatis TIDAK ikut tampil; bisa dilihat lewat "Semua Status".
+  const [selectedStatus, setSelectedStatus] = useState('Menunggu Verifikasi');
   const [inspectingTicket, setInspectingTicket] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -298,7 +297,11 @@ export function MatchReviewView({
   const filteredTickets = useMemo(() => {
     return displayTickets.filter((t) => {
       const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
-      const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus;
+      const matchesStatus =
+        selectedStatus === 'all' ||
+        selectedStatus === 'Menunggu Verifikasi'
+          ? isReportAwaiting(t.statusRaw)
+          : t.status === selectedStatus;
       const q = searchQuery.toLowerCase().trim();
       const bestCandidate = ticketPairings[t.id];
       const matchesSearch =
@@ -539,10 +542,10 @@ export function MatchReviewView({
                 <button
                   type="button"
                   className="btn-new-claim-action"
-                  onClick={() => onNavChange && onNavChange('Buat Laporan Tamu')}
+                  onClick={() => onNavChange && onNavChange('Buat Laporan')}
                 >
                   <Plus size={15} />
-                  <span>Buat Laporan Tamu</span>
+                  <span>+ Buat Laporan</span>
                 </button>
               </div>
             </div>
@@ -571,16 +574,18 @@ export function MatchReviewView({
                   <CheckCircle2 size={10} />
                   STATUS VERIFIKASI
                 </span>
-                <select
+<select
                   className="filter-native-select"
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
 <option value="all">Semua Status</option>
+                    <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
                     <option value="Baru Masuk">Baru Masuk</option>
                     <option value="Dicocokkan">Dicocokkan</option>
                     <option value="Terverifikasi">Terverifikasi</option>
-                    <option value="Selesai Handover">Selesai Handover</option>
+                    <option value="Selesai Handover">Selesai Handover (Diserahkan)</option>
+                    <option value="Ditolak">Ditolak</option>
                 </select>
               </div>
             </div>
@@ -600,9 +605,9 @@ export function MatchReviewView({
                 <button
                   type="button"
                   className="btn-create-empty-amber"
-                  onClick={() => onNavChange && onNavChange('Buat Laporan Tamu')}
+                  onClick={() => onNavChange && onNavChange('Buat Laporan')}
                 >
-                  + Buat Laporan Tamu Baru
+                  + Buat Laporan Baru
                 </button>
               </div>
             </div>
@@ -794,7 +799,7 @@ export function MatchReviewView({
                   </div>
                   <div className="compare-meta-item">
                     <span className="meta-label">Nomor Kamar</span>
-                    <span className="meta-value">Kamar {inspectingTicket.roomNumber}</span>
+                    <span className="meta-value">Kamar {inspectingTicket.roomNumber || '-'}</span>
                   </div>
                   <div className="compare-meta-item">
                     <span className="meta-label">Kategori</span>

@@ -72,7 +72,7 @@ export function FoundItemsTable({
 
               {/* No Kamar */}
               <td className="cell-room-badge">
-                <span className="room-number-chip">Kamar {item.roomNumber}</span>
+                <span className="room-number-chip">Kamar {item.roomNumber || '-'}</span>
               </td>
 
               {/* Kategori */}

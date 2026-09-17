@@ -82,7 +82,7 @@ export function TopNavbar({
         notifs.push({
           id: `ticket-${t.id}`,
           title: `Klaim Menunggu Verifikasi: ${t.id}`,
-          desc: `${t.guestName} (Kamar ${t.roomNumber}) melapor kehilangan ${t.itemName}.`,
+          desc: `${t.guestName}${t.roomNumber ? ` (Kamar ${t.roomNumber})` : ''} melapor kehilangan ${t.itemName}.`,
           time: t.reportedAt || 'Baru saja',
           type: 'amber',
           icon: Ticket,

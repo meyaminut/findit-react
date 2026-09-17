@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { BrowserRouter, Navigate, Routes, Route, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { getToken } from './services/ApiService';
 import { getToken as getUserToken } from './services/api';
 import AuthController from './controllers/AuthController';
@@ -8,9 +15,9 @@ import AdminLoginView from './views/auth/AdminLoginView';
 import AdminDashboardView from './views/dashboard/AdminDashboardView';
 import MatchReviewView from './views/match-review/MatchReviewView';
 import AllReportsView from './views/reports/AllReportsView';
-import NewClaimTicketView from './views/claim-ticket/NewClaimTicketView';
 import ManageAdminsView from './views/admin-management/ManageAdminsView';
 import OperationalReportsView from './views/reports/OperationalReportsView';
+import NewLostReportView from './views/reports/NewLostReportView';
 
 import UserLogin from './views/auth/UserLogin';
 import UserRegister from './views/auth/UserRegister';
@@ -26,22 +33,17 @@ import UserDashboard from './views/dashboard/UserDashboard';
 /**
  * Root Application Component.
  *
- * Routing (React Router):
- * - `/` | `/user` -> redirect ke /user/login
- * - `/user/onboarding`         -> UserOnboarding (tour pre-login, diakhiri ke /user/login)
- * - `/user/login`              -> UserLogin
- * - `/user/register`           -> UserRegister
- * - `/user/welcome`            -> UserSuccessWelcome
- * - `/user/dashboard`          -> UserDashboard (tanpa Admin Layout, BUTUH login)
- * - `/user/survey`             -> UserSurveyLanding (BUTUH login)
- * - `/user/report-form`        -> UserReportForm (BUTUH login)
- * - `/user/confirmation`       -> UserReportConfirmation (BUTUH login)
- * - `/user/thanks`             -> UserSuccessWelcome (Thank You, views/user, BUTUH login)
- * - `/admin/login`             -> AdminShell (state 'login' bila tanpa token; sukses -> /admin/dashboard)
- * - `/admin/dashboard`         -> AdminDashboardView (via AdminShell, route eksplisit)
- * - `/admin/*` & semua path lain -> AdminShell (state-driven, operations console)
- *
- * Route user dirender mandiri, TIDAK dibungkus Admin Layout/Sidebar.
+ * Routing (React Router) — Admin Portal kini URL-driven (bukan lagi state-driven),
+ * sehingga back/forward/refresh selalu membuka halaman yang benar:
+ *   - `/user/*`              -> portal tamu (halaman mandiri, tanpa Admin Layout)
+ *   - `/admin`               -> Dashboard
+ *   - `/admin/login`         -> Admin Login (gate: tanpa token)
+ *   - `/admin/verifikasi`    -> MatchReviewView (Master-Detail Hub & Handover)
+ *   - `/admin/barang-temuan` -> AllReportsView (Log Barang Temuan)
+ *   - `/admin/laporan`       -> OperationalReportsView (arsip laporan)
+ *   - `/admin/laporan/baru`  -> NewLostReportView (form laporan full-page,
+ *                                reuse ReportLostForm)
+ *   - `/admin/kelola-admin`  -> ManageAdminsView
  */
 function App() {
   return (
@@ -109,11 +111,10 @@ function App() {
           }
         />
 
-        {/* ---- Admin Portal (state-driven, operations console) ---- */}
-        <Route path="/admin/login" element={<AdminLoginRoute />} />
-        <Route path="/admin/dashboard" element={<AdminShell initialRoute="dashboard" />} />
+        {/* ---- Admin Portal (explicit URL-driven routes) ---- */}
         <Route path="/admin" element={<AdminShell />} />
         <Route path="/admin/*" element={<AdminShell />} />
+        <Route path="/admin/login" element={<AdminShell />} />
         <Route path="*" element={<AdminShell />} />
       </Routes>
     </BrowserRouter>
@@ -144,160 +145,146 @@ function RedirectIfUserAuthed({ children }) {
 }
 
 /**
- * Route /admin/login: admin yang sudah login langsung diarahkan ke
- * /admin/dashboard; yang belum login melihat screen login (via AdminShell),
- * lalu setelah sukses login AdminShell redirect ke /admin/dashboard.
+ * Resolve id navigasi lama (label string) -> path URL baru.
+ * Ini menjaga onNavChange dari Sidebar/TopNavbar/aksi tombol tetap bekerja.
  */
-function AdminLoginRoute() {
-  if (getToken()) {
-    return <Navigate to="/admin/dashboard" replace />;
+function resolveNavPath(navId) {
+  if (navId === 'Dashboard') return '/admin';
+  if (
+    navId === 'Verifikasi' ||
+    navId === 'Klaim & Serah Terima' ||
+    navId === 'Tiket Klaim' ||
+    navId === 'Tiket Klaim Tamu' ||
+    navId === 'claim-tickets' ||
+    navId === 'Verifikasi & Serah Terima' ||
+    navId === 'Verifikasi & Pencocokan' ||
+    navId === 'Match Review' ||
+    navId === 'match-review' ||
+    navId === 'Handover' ||
+    navId === 'handover' ||
+    navId === 'verification'
+  ) {
+    return '/admin/verifikasi';
   }
-  return <AdminShell />;
+  if (
+    navId === 'Buat Laporan' ||
+    navId === 'Buat Laporan Tamu' ||
+    navId === 'new-claim'
+  ) {
+    return '/admin/laporan/baru';
+  }
+  if (navId === 'Barang Temuan' || navId === 'All Reports' || navId === 'all-reports') {
+    return '/admin/barang-temuan';
+  }
+  if (
+    navId === 'Laporan' ||
+    navId === 'reports' ||
+    navId === 'laporan' ||
+    navId === 'Follow-up Checkout' ||
+    navId === 'Survei Pasca-Checkout' ||
+    navId === 'survei-checkout'
+  ) {
+    return '/admin/laporan';
+  }
+  if (
+    navId === 'Kelola Admin' ||
+    navId === 'admin-management' ||
+    navId === 'Admin Management'
+  ) {
+    return '/admin/kelola-admin';
+  }
+  if (navId === 'login') return '/admin/login';
+  return '/admin';
 }
 
 /**
- * Admin Portal shell.
- * Controls active view routing across MVC Views:
- * - 'login' (Admin Login Screen)
- * - 'dashboard' (5. Admin Dashboard / Control Console)
- * - 'new-claim' (6. Buat Laporan Tamu / New Claim Ticket)
- * - 'verification' (7 & 8. Klaim & Serah Terima - Master Detail Hub & Handover Drawer)
- * - 'all-reports' (9. Barang Temuan / Log Barang Temuan Master Inventory)
- * - 'reports' (10. Laporan Operasional & Audit Resmi)
- * - 'admin-management' (11. Kelola Admin / Admin Management Console)
+ * Admin Portal shell (URL-driven).
+ * Melakukan gate autentikasi lalu me-render view sesuai path yang aktif.
  */
-function AdminShell({ initialRoute }) {
+function AdminShell() {
   const navigate = useNavigate();
-  // Gate: akses /admin tanpa token sah -> tampilkan halaman login dulu.
-  const [activeRoute, setActiveRoute] = useState(() => {
-    if (!getToken()) return 'login';
-    return initialRoute || 'dashboard';
-  });
+  const location = useLocation();
   const [selectedMatchId, setSelectedMatchId] = useState(null);
-  // Dipakai sebagai `key` view agar state dashboard ter-reset saat navigasi.
-  const [routeKey, setRouteKey] = useState(0);
+  const token = getToken();
+
+  const segments = location.pathname.replace(/^\/admin/, '').split('/').filter(Boolean);
+  const current = (segments[0] || '').toLowerCase();
+  const sub = (segments[1] || '').toLowerCase();
 
   const handleLogout = () => {
     AuthController.logout();
-    setActiveRoute('login');
-    setSelectedMatchId(null);
-    setRouteKey((prev) => prev + 1);
     navigate('/admin/login', { replace: true });
   };
 
   const handleLoginSuccess = () => {
-    setActiveRoute('dashboard');
-    navigate('/admin/dashboard', { replace: true });
-    setRouteKey((prev) => prev + 1);
+    navigate('/admin', { replace: true });
   };
 
   const handleNavChange = (navId, payload = null) => {
     if (payload?.matchId) {
       setSelectedMatchId(payload.matchId);
     }
-    if (navId === 'Dashboard') {
-      setSelectedMatchId(null);
-      setActiveRoute('dashboard');
-      navigate('/admin/dashboard', { replace: true });
-      setRouteKey((prev) => prev + 1);
-    } else if (
-      navId === 'Verifikasi' ||
-      navId === 'Klaim & Serah Terima' ||
-      navId === 'Tiket Klaim' || 
-      navId === 'Tiket Klaim Tamu' || 
-      navId === 'claim-tickets' ||
-      navId === 'Verifikasi & Serah Terima' ||
-      navId === 'Verifikasi & Pencocokan' || 
-      navId === 'Match Review' ||
-      navId === 'match-review' ||
-      navId === 'Handover' ||
-      navId === 'handover' ||
-      navId === 'verification'
-    ) {
-      if (payload) {
-        setSelectedMatchId(typeof payload === 'string' ? payload : payload.matchId || null);
-      }
-      setActiveRoute('verification');
-    } else if (navId === 'Buat Laporan Tamu' || navId === 'new-claim') {
-      setActiveRoute('new-claim');
-    } else if (navId === 'Barang Temuan' || navId === 'All Reports' || navId === 'all-reports') {
-      setActiveRoute('all-reports');
-    } else if (
-      navId === 'Laporan' ||
-      navId === 'reports' ||
-      navId === 'laporan' ||
-      navId === 'Follow-up Checkout' ||
-      navId === 'Survei Pasca-Checkout' || 
-      navId === 'survei-checkout'
-    ) {
-      setActiveRoute('reports');
-    } else if (
-      navId === 'Kelola Admin' ||
-      navId === 'admin-management' ||
-      navId === 'Admin Management'
-    ) {
-      setActiveRoute('admin-management');
-    } else {
-      setActiveRoute('dashboard');
-    }
+    navigate(resolveNavPath(navId));
   };
 
-  return (
-    <div className="app-root-container">
-      {activeRoute === 'login' && (
-        <AdminLoginView onLoginSuccess={handleLoginSuccess} />
-      )}
+  // Gate autentikasi: tanpa token, semua halaman admin -> login.
+  if (!token) {
+    if (current === 'login') {
+      return (
+        <div className="app-root-container">
+          <AdminLoginView onLoginSuccess={handleLoginSuccess} />
+        </div>
+      );
+    }
+    return <Navigate to="/admin/login" replace />;
+  }
 
-      {activeRoute === 'dashboard' && (
-        <AdminDashboardView
-          key={routeKey}
-          onLogout={handleLogout}
-          onNavChange={handleNavChange}
-        />
-      )}
-
-      {activeRoute === 'new-claim' && (
-        <NewClaimTicketView
-          activeNav="Verifikasi"
-          onLogout={handleLogout}
-          onNavChange={handleNavChange}
-        />
-      )}
-
-      {activeRoute === 'verification' && (
-        <MatchReviewView
-          activeNav="Verifikasi"
-          onNavChange={handleNavChange}
-          onLogout={handleLogout}
-          selectedMatchId={selectedMatchId}
-        />
-      )}
-
-      {activeRoute === 'all-reports' && (
-        <AllReportsView
-          activeNav="Barang Temuan"
-          onNavChange={handleNavChange}
-          onLogout={handleLogout}
-        />
-      )}
-
-      {activeRoute === 'reports' && (
+  let content;
+  if (current === '' || current === 'dashboard') {
+    content = <AdminDashboardView onLogout={handleLogout} onNavChange={handleNavChange} />;
+  } else if (current === 'login') {
+    content = <Navigate to="/admin" replace />;
+  } else if (current === 'verifikasi') {
+    content = (
+      <MatchReviewView
+        activeNav="Verifikasi"
+        onNavChange={handleNavChange}
+        onLogout={handleLogout}
+        selectedMatchId={selectedMatchId}
+      />
+    );
+  } else if (current === 'barang-temuan') {
+    content = (
+      <AllReportsView
+        activeNav="Barang Temuan"
+        onNavChange={handleNavChange}
+        onLogout={handleLogout}
+      />
+    );
+  } else if (current === 'laporan') {
+    content =
+      sub === 'baru' ? (
+        <NewLostReportView onNavChange={handleNavChange} onLogout={handleLogout} />
+      ) : (
         <OperationalReportsView
           activeNav="Laporan"
           onNavChange={handleNavChange}
           onLogout={handleLogout}
         />
-      )}
+      );
+  } else if (current === 'kelola-admin') {
+    content = (
+      <ManageAdminsView
+        activeNav="Kelola Admin"
+        onNavChange={handleNavChange}
+        onLogout={handleLogout}
+      />
+    );
+  } else {
+    content = <Navigate to="/admin" replace />;
+  }
 
-      {activeRoute === 'admin-management' && (
-        <ManageAdminsView
-          activeNav="Kelola Admin"
-          onNavChange={handleNavChange}
-          onLogout={handleLogout}
-        />
-      )}
-    </div>
-  );
+  return <div className="app-root-container">{content}</div>;
 }
 
 export default App;

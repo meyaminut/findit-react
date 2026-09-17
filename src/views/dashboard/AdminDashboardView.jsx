@@ -101,7 +101,7 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
                 onClick={() => setIsQuickReportOpen(true)}
               >
                 <PlusCircle size={16} className="btn-icon" />
-                <span>+ Buat Laporan Cepat</span>
+                <span>+ Buat Laporan</span>
               </button>
             </div>
           </div>

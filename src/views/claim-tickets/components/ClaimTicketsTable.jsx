@@ -66,7 +66,7 @@ export function ClaimTicketsTable({
                 <div className="guest-col-wrap">
                   <span className="guest-name-text">{t.guestName}</span>
                   <span className="guest-room-sub">
-                    Kamar {t.roomNumber} • {t.roomType}
+                    Kamar {t.roomNumber || '-'} • {t.roomType}
                   </span>
                 </div>
               </td>

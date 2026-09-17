@@ -48,7 +48,7 @@ export default function UserReportConfirmation() {
   const currentUser = getCurrentUser();
 
   const ticketNumber = report?.report_identifier || '#CLM-2024-0892';
-  const roomNumber = report?.room_number || 'Kamar 314';
+  const roomNumber = report?.room_number ? `Kamar ${report.room_number}` : '-';
   const itemTitle = report?.title || report?.description || 'Smartwatch Garmin Venu SQ';
   const itemMeta = report?.category
     ? `${report.category} • ${roomNumber}`

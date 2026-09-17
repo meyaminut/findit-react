@@ -132,7 +132,7 @@ export function HousekeepingCandidatesCard({
                 </div>
                 <div className="officer-meta-box">
                   <span className="meta-box-label">Lokasi Penemuan:</span>
-                  <span className="meta-box-val">{primaryItem.locationFound || primaryItem.roomNumber || 'Kamar 314'}</span>
+                  <span className="meta-box-val">{primaryItem.locationFound || primaryItem.roomNumber || '-'}</span>
                 </div>
               </div>
             </div>
