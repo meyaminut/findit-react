@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardController } from './DashboardController';
 import ApiService from '../services/ApiService';
+import {
+  normalizeReportStatus,
+  isReportVerified,
+  isReportResolved,
+  reportStatusLabel,
+  reportStatusType,
+} from '../services/reportStatus';
 
 /**
  * Controller Hook: useDashboardController
@@ -73,8 +80,8 @@ export function useDashboardController() {
               iconType: isLost ? 'alert-circle' : 'box',
               locationDetail: r.location || '-',
               reportTime: `${dateStr}, ${timeStr} WIB`,
-              status: mapApiStatus(r.status),
-              statusType: mapApiStatusType(r.status),
+              status: mapApiStatus(r.status, r.type),
+              statusType: mapApiStatusType(r.status, r.type),
               priorityTag: null,
               type: r.type,
               description: r.description || '',
@@ -90,10 +97,9 @@ export function useDashboardController() {
 
           // Update KPI metrics from live data
           const foundReports = allReports.filter(r => r.type === 'found');
-          const lostReports = allReports.filter(r => r.type === 'lost');
-          const pending = allReports.filter(r => r.status === 'pending');
-          const verified = allReports.filter(r => r.status === 'verified' || r.status === 'diverifikasi');
-          const completed = allReports.filter(r => r.status === 'completed' || r.status === 'claimed');
+          const pending = allReports.filter(r => normalizeReportStatus(r.status) === 'baru');
+          const verified = allReports.filter(r => isReportVerified(r.status));
+          const completed = allReports.filter(r => isReportResolved(r.status));
 
           setMetrics({
             totalFound: {
@@ -354,30 +360,12 @@ export function useDashboardController() {
 }
 
 // ──── Helpers ────
-function mapApiStatus(status) {
-  const map = {
-    'pending': 'Baru Masuk',
-    'diverifikasi': 'Terverifikasi',
-    'verified': 'Terverifikasi',
-    'approved': 'Disetujui',
-    'completed': 'Selesai',
-    'claimed': 'Diklaim',
-    'rejected': 'Ditolak',
-  };
-  return map[status] || 'Baru Masuk';
+function mapApiStatus(status, type = 'lost') {
+  return reportStatusLabel(status, type);
 }
 
 function mapApiStatusType(status) {
-  const map = {
-    'pending': 'gray',
-    'diverifikasi': 'green',
-    'verified': 'green',
-    'approved': 'blue',
-    'completed': 'green',
-    'claimed': 'green',
-    'rejected': 'red',
-  };
-  return map[status] || 'gray';
+  return reportStatusType(status);
 }
 
 export default useDashboardController;

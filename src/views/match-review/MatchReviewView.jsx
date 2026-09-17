@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   CheckCircle2, 
   Search, 
@@ -23,6 +23,12 @@ import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
 import { StorageService } from '../../services/StorageService';
 import ApiService from '../../services/ApiService';
+import {
+  applyMatchDecision,
+  applyMatchDecisionLocal,
+  isApiCandidate,
+} from '../../services/matchSync';
+import { isReportAwaiting, isReportVerified, reportStatusLabel } from '../../services/reportStatus';
 import { MatchReviewModel } from '../../models/MatchReviewModel';
 import './MatchReviewView.css';
 
@@ -32,28 +38,141 @@ import './MatchReviewView.css';
  * Displays all guest claim tickets, automatically pairs them with Housekeeping found item candidates,
  * evaluates confidence scores, and provides an interactive inspection modal for FO verification.
  */
+
+// ──── API→UI mapping helpers (API-first) ────
+// Backend melayani file foto di path /uploads relatif terhadap host (nginx
+// strip /findit). API base dibaca dari env; potong suffix /api untuk akar host.
+const resolveMediaUrl = (url) => {
+  if (!url) return '';
+  if (/^(https?:)?\/\//i.test(url)) return url;
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+  const base = envUrl.replace(/\/api\/?/i, '');
+  if (!base) return url;
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`;
+};
+
+const formatReportTimestamp = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  const timeStr = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr}, ${timeStr} WIB`;
+};
+
+const normalizeConfidence = (raw) => {
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return 0;
+  return num <= 1 ? Math.round(num * 100) : Math.round(num);
+};
+
+// Konversi satu report live (lost) menjadi ticket UI + kandidat (dari match & found report).
+const buildApiTickets = (reports, matches) => {
+  const list = Array.isArray(reports) ? reports : [];
+  const matchList = Array.isArray(matches) ? matches : [];
+  const lostReports = list.filter((r) => String(r.type || '').toLowerCase() === 'lost');
+  const foundReports = list.filter((r) => String(r.type || '').toLowerCase() === 'found');
+  const foundById = new Map(foundReports.map((f) => [String(f.id ?? f.ID), f]));
+
+  return lostReports.map((r) => {
+    const reportId = String(r.id ?? r.ID);
+    const pairMatch = matchList.find((m) => String(m.lost_report_id) === reportId) || null;
+    let candidate = null;
+
+    if (pairMatch) {
+      const foundId = String(pairMatch.found_report_id ?? '');
+      const found = foundById.get(foundId) || null;
+      candidate = {
+        id: `match-${pairMatch.id ?? pairMatch.ID}`,
+        _apiId: pairMatch.id ?? pairMatch.ID,
+        _source: 'api',
+        lost_report_id: pairMatch.lost_report_id,
+        found_report_id: foundId,
+        name: found?.title || (foundId ? `Barang Temuan #${foundId}` : 'Barang Temuan'),
+        category: found?.category || pairMatch.category || '',
+        color: found?.color || '',
+        photoUrl: resolveMediaUrl(found?.photo_url || ''),
+        confidenceScore: normalizeConfidence(pairMatch.similarity_score),
+        finderName: found?.user?.name || 'Staf Housekeeping',
+        roomNumber: found?.room_number || '',
+        locationFound:
+          found?.location || (found?.room_number ? `Kamar ${found.room_number}` : pairMatch.location || ''),
+        storageLocation: 'Brankas FO',
+        foundAt: formatReportTimestamp(found?.created_at),
+        description: found?.description || '',
+        notes: pairMatch.activity_note || '',
+        matchStatus: pairMatch.status || 'pending',
+      };
+    }
+
+    return {
+      id: `#RPT-${reportId}`,
+      reportIdentifier: r.report_identifier || '',
+      _apiId: reportId,
+      _source: 'api',
+      priority: r.priority || 'Reguler',
+      guestName: r.user?.name || 'Tamu',
+      roomNumber: r.room_number || '',
+      roomType: r.room_type || '',
+      itemName: r.title || 'Barang',
+      category: r.category || 'Lainnya',
+      color: r.color || '',
+      locationLost: r.location || (r.room_number ? `Kamar ${r.room_number}` : ''),
+      description: r.description || '',
+      status: reportStatusLabel(r.status, 'lost'),
+      statusRaw: r.status,
+      reportedAt: formatReportTimestamp(r.created_at),
+      createdAt: r.created_at || new Date().toISOString(),
+      _candidate: candidate,
+    };
+  });
+};
+
 export function MatchReviewView({ 
   activeNav = 'Verifikasi', 
   onNavChange, 
   onLogout 
 }) {
   const [tickets, setTickets] = useState(() => StorageService.getTickets());
-  const [foundItems, setFoundItems] = useState(() => StorageService.getFoundItems());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [inspectingTicket, setInspectingTicket] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [apiTickets, setApiTickets] = useState(null);
+  const [apiActive, setApiActive] = useState(false);
+
+  const displayTickets = apiActive && Array.isArray(apiTickets) ? apiTickets : tickets;
 
   // Sync data listener
   const refreshData = () => {
     setTickets(StorageService.getTickets());
-    setFoundItems(StorageService.getFoundItems());
   };
+
+  // API-first: tarik laporan lost + match dari backend; fallback StorageService offline.
+  const loadApiTickets = useCallback(async () => {
+    try {
+      const health = await ApiService.checkHealth();
+      if (!health.online) {
+        setApiActive(false);
+        return;
+      }
+      const [reports, matches] = await Promise.all([
+        ApiService.getReports(),
+        ApiService.getMatches(),
+      ]);
+      setApiTickets(buildApiTickets(reports, matches));
+      setApiActive(true);
+    } catch (err) {
+      console.warn('[MatchReviewView] API tidak tersedia, pakai data lokal:', err.message);
+      setApiActive(false);
+    }
+  }, []);
 
   useEffect(() => {
     refreshData();
+    loadApiTickets();
     const handleUpdate = () => refreshData();
     window.addEventListener('findit_tickets_updated', handleUpdate);
     window.addEventListener('findit_items_updated', handleUpdate);
@@ -61,7 +180,7 @@ export function MatchReviewView({
       window.removeEventListener('findit_tickets_updated', handleUpdate);
       window.removeEventListener('findit_items_updated', handleUpdate);
     };
-  }, []);
+  }, [loadApiTickets]);
 
   const showToast = (message, type = 'success') => {
     setToastNotification({ message, type });
@@ -73,22 +192,26 @@ export function MatchReviewView({
   // Pre-calculate candidate pairings for tickets
   const ticketPairings = useMemo(() => {
     const pairings = {};
-    tickets.forEach((t) => {
+    displayTickets.forEach((t) => {
+      if (t._candidate) {
+        pairings[t.id] = t._candidate;
+        return;
+      }
       const candidates = MatchReviewModel.getCandidates(t.id);
       pairings[t.id] = candidates.length > 0 ? candidates[0] : null;
     });
     return pairings;
-  }, [tickets, foundItems]);
+  }, [displayTickets]);
 
   // Categories list
   const categoryOptions = useMemo(() => {
-    const cats = new Set(tickets.map((t) => t.category).filter(Boolean));
+    const cats = new Set(displayTickets.map((t) => t.category).filter(Boolean));
     return ['all', ...Array.from(cats)];
-  }, [tickets]);
+  }, [displayTickets]);
 
   // Filtered tickets
   const filteredTickets = useMemo(() => {
-    return tickets.filter((t) => {
+    return displayTickets.filter((t) => {
       const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory;
       const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus;
       const q = searchQuery.toLowerCase().trim();
@@ -102,15 +225,21 @@ export function MatchReviewView({
         (bestCandidate && bestCandidate.name && bestCandidate.name.toLowerCase().includes(q));
       return matchesCategory && matchesStatus && matchesSearch;
     });
-  }, [tickets, selectedCategory, selectedStatus, searchQuery, ticketPairings]);
+  }, [displayTickets, selectedCategory, selectedStatus, searchQuery, ticketPairings]);
 
   // KPI counts
-  const totalCount = tickets.length;
-  const pendingCount = tickets.filter((t) => t.status === 'Menunggu Verifikasi').length;
-  const verifiedCount = tickets.filter((t) => t.status === 'Terverifikasi' || t.status === 'Selesai Handover').length;
+  const totalCount = displayTickets.length;
+  const pendingCount = displayTickets.filter((t) => isReportAwaiting(t.statusRaw)).length;
+  const verifiedCount = displayTickets.filter(
+    (t) => isReportVerified(t.statusRaw) || t.statusRaw === 'dikembalikan'
+  ).length;
 
   // Actions
   const handleDeleteTicket = (ticketId) => {
+    if (displayTickets.find((t) => t.id === ticketId)?._source === 'api') {
+      showToast('Laporan live dari backend tidak dapat dihapus dari halaman ini.', 'info');
+      return;
+    }
     if (window.confirm(`Hapus laporan barang ${ticketId}?`)) {
       StorageService.deleteTicket(ticketId);
       showToast(`Laporan barang ${ticketId} berhasil dihapus.`, 'info');
@@ -118,98 +247,52 @@ export function MatchReviewView({
     }
   };
 
-  // ── API-integration helpers (API-first, fallback StorageService) ──
-  const isApiCandidate = (candidate) =>
-    Boolean(
-      candidate &&
-      (candidate._apiId != null ||
-        candidate._source === 'api' ||
-        /-API-/i.test(String(candidate.lost_report_id ?? '')) ||
-        /-API-/i.test(String(candidate.found_report_id ?? '')))
-    );
-
-  const findApiMatch = async (candidate) => {
-    const matches = await ApiService.getMatches();
-    if (!Array.isArray(matches) || matches.length === 0) return null;
-
-    let target = null;
-    if (candidate._apiId != null) {
-      target = matches.find((m) => String(m.id ?? m.ID) === String(candidate._apiId)) || null;
-    }
-    if (!target) {
-      const lostId = String(candidate.lost_report_id ?? '').replace(/\D/g, '');
-      const foundId = String(candidate.found_report_id ?? '').replace(/\D/g, '');
-      if (lostId && foundId) {
-        target =
-          matches.find(
-            (m) => String(m.lost_report_id) === lostId && String(m.found_report_id) === foundId
-          ) || null;
-      }
-    }
-    return target;
-  };
-
-  // Update match via API; selalu sertakan seluruh field (backend PUT bersifat
-  // replace-all DAN mewajibkan lost_report_id + found_report_id).
-  const apiUpdateMatchStatus = async (candidate, nextStatus) => {
-    const target = await findApiMatch(candidate);
-    if (!target) return false;
-    await ApiService.updateMatchStatus(target.id ?? target.ID, nextStatus, {
-      lost_report_id: target.lost_report_id,
-      found_report_id: target.found_report_id,
-      similarity_score: target.similarity_score ?? 0,
-      verified_by: target.verified_by ?? null,
-      handover_method: target.handover_method ?? '',
-      contact_shared_at: target.contact_shared_at ?? null,
-      activity_note: target.activity_note ?? '',
-    });
-    return true;
-  };
-
-  const syncMatchStatus = async (ticket, candidate, nextStatus, extra = {}) => {
+  // ── API-first decision (helper shared di services/matchSync) ──
+  const decideMatch = async (ticket, candidate, nextStatus, extra = {}) => {
+    let viaApi = false;
     if (isApiCandidate(candidate)) {
       try {
-        const updatedViaApi = await apiUpdateMatchStatus(candidate, nextStatus);
-        if (updatedViaApi) return true;
+        viaApi = await applyMatchDecision({ candidate, nextStatus, extra });
       } catch (err) {
-        console.warn('[MatchReview] API update gagal, fallback ke StorageService:', err.message);
+        console.warn('[MatchReview] API decision gagal, fallback ke StorageService:', err.message);
       }
     }
-    if (candidate?.id) {
-      StorageService.updateMatchStatus(candidate.id, nextStatus, {
-        lost_report_id: ticket.id,
-        found_report_id: candidate.found_report_id || candidate.id,
-        ...extra,
-      });
+    if (!viaApi) {
+      await applyMatchDecisionLocal({ ticket, candidate, nextStatus, extra });
     }
-    return false;
+    // Sinkron cache lokal agar label tetap konsisten (data campur / offline).
+    StorageService.updateTicketStatus(
+      ticket.id,
+      nextStatus === 'approved' ? 'Terverifikasi' : 'Menunggu Verifikasi'
+    );
   };
 
   const handleConfirmVerification = async (ticket, candidate) => {
     setActionLoading(true);
     try {
-      await syncMatchStatus(ticket, candidate, 'approved', {
-        verified_by: 'Duty Manager Front Office',
+      const user = ApiService.getCurrentUser();
+      await decideMatch(ticket, candidate, 'approved', {
+        verified_by: user?.id ?? user?.ID ?? null,
       });
-      StorageService.updateTicketStatus(ticket.id, 'Terverifikasi');
       showToast(`Barang ${ticket.id} berhasil ditandai Terverifikasi!`, 'success');
     } finally {
       setActionLoading(false);
       setInspectingTicket(null);
       refreshData();
+      loadApiTickets();
     }
   };
 
   const handleRejectRelation = async (ticket, candidate) => {
     setActionLoading(true);
     try {
-      await syncMatchStatus(ticket, candidate, 'rejected');
-      StorageService.updateTicketStatus(ticket.id, 'Menunggu Verifikasi');
+      await decideMatch(ticket, candidate, 'rejected');
       showToast(`Kandidat barang temuan dilepaskan dari barang ${ticket.id}.`, 'info');
     } finally {
       setActionLoading(false);
       setInspectingTicket(null);
       refreshData();
+      loadApiTickets();
     }
   };
 
@@ -348,10 +431,11 @@ export function MatchReviewView({
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
-                  <option value="all">Semua Status</option>
-                  <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
-                  <option value="Terverifikasi">Terverifikasi</option>
-                  <option value="Selesai Handover">Selesai</option>
+<option value="all">Semua Status</option>
+                    <option value="Baru Masuk">Baru Masuk</option>
+                    <option value="Dicocokkan">Dicocokkan</option>
+                    <option value="Terverifikasi">Terverifikasi</option>
+                    <option value="Selesai Handover">Selesai Handover</option>
                 </select>
               </div>
             </div>
@@ -395,7 +479,7 @@ export function MatchReviewView({
                 <tbody>
                   {filteredTickets.map((t) => {
                     const candidate = ticketPairings[t.id];
-                    const isPending = t.status === 'Menunggu Verifikasi';
+                    const isPending = !isReportVerified(t.statusRaw) && !(t.statusRaw === 'dikembalikan');
                     return (
                       <tr key={t.id} className="verification-table-row">
                         {/* 1. No Tiket */}
@@ -517,7 +601,7 @@ export function MatchReviewView({
 
               <div className="verification-table-footer">
                 <span className="footer-count-text">
-                  Menampilkan {filteredTickets.length} dari total {tickets.length} klaim terdaftar
+                  Menampilkan {filteredTickets.length} dari total {displayTickets.length} klaim terdaftar
                 </span>
               </div>
             </div>

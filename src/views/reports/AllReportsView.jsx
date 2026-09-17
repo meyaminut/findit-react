@@ -20,6 +20,13 @@ import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
 import { StorageService } from '../../services/StorageService';
 import ApiService from '../../services/ApiService';
+import {
+  isReportAwaiting,
+  isReportVerified,
+  isReportResolved,
+  reportStatusLabel,
+  reportStatusType,
+} from '../../services/reportStatus';
 import './AllReportsView.css';
 
 /**
@@ -95,6 +102,7 @@ export function AllReportsView({
               timestamp: `${dateStr}, ${timeStr} WIB`,
               createdAt: r.created_at || new Date().toISOString(),
               status: mapApiStatusToDisplay(r.status, r.type),
+              statusRaw: r.status,
               description: r.description || '',
               activityNote: r.activity_note || '',
               _source: 'api',
@@ -143,6 +151,7 @@ export function AllReportsView({
         timestamp: item.foundAt || 'Hari ini',
         createdAt: item.createdAt || Date.now(),
         status: item.status || 'Di Brankas FO',
+        statusRaw: item.status || 'Di Brankas FO',
         rawItem: item
       });
     });
@@ -167,6 +176,7 @@ export function AllReportsView({
         timestamp: ticket.reportedAt || 'Hari ini',
         createdAt: ticket.createdAt || Date.now(),
         status: ticket.status || 'Menunggu Verifikasi',
+        statusRaw: ticket.status || 'Menunggu Verifikasi',
         rawItem: ticket
       });
     });
@@ -185,13 +195,13 @@ export function AllReportsView({
   const metrics = useMemo(() => {
     const total = allReports.length;
     const awaiting = allReports.filter(
-      (r) => r.status === 'Menunggu Verifikasi' || r.status === 'Di Brankas FO'
+      (r) => isReportAwaiting(r.statusRaw)
     ).length;
     const matched = allReports.filter(
-      (r) => r.status === 'Terverifikasi'
+      (r) => isReportVerified(r.statusRaw)
     ).length;
     const resolved = allReports.filter(
-      (r) => r.status === 'Sudah Diambil' || r.status === 'Selesai Handover'
+      (r) => isReportResolved(r.statusRaw)
     ).length;
 
     return {
@@ -264,15 +274,15 @@ export function AllReportsView({
   };
 
   const getStatusClass = (status) => {
-    switch (status) {
-      case 'Menunggu Verifikasi':
-      case 'Di Brankas FO':
-        return 'warning';
-      case 'Terverifikasi':
+    switch (reportStatusType(status)) {
+      case 'green':
         return 'matched';
-      case 'Sudah Diambil':
-      case 'Selesai Handover':
+      case 'blue':
         return 'returned';
+      case 'amber':
+        return 'warning';
+      case 'red':
+        return 'red';
       default:
         return 'new';
     }
@@ -417,11 +427,11 @@ export function AllReportsView({
                     }}
                   >
                     <option value="all">All Statuses</option>
-                    <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
-                    <option value="Di Brankas FO">Di Brankas FO</option>
+                    <option value="Baru Masuk">Baru Masuk</option>
+                    <option value="Dicocokkan">Dicocokkan</option>
                     <option value="Terverifikasi">Terverifikasi</option>
                     <option value="Sudah Diambil">Sudah Diambil</option>
-                    <option value="Selesai Handover">Selesai</option>
+                    <option value="Selesai Handover">Selesai Handover</option>
                   </select>
                   <ChevronDown size={14} className="select-chevron" />
                 </div>
@@ -537,7 +547,7 @@ export function AllReportsView({
 
                         {/* Col 6: Status */}
                         <td>
-                          <span className={`report-status-pill ${getStatusClass(report.status)}`}>
+                          <span className={`report-status-pill ${getStatusClass(report.statusRaw)}`}>
                             <span className="status-dot-indicator" />
                             {report.status}
                           </span>
@@ -668,7 +678,7 @@ export function AllReportsView({
                 <div className="modal-spec-item">
                   <span className="spec-label">Status Saat Ini</span>
                   <span className="spec-val">
-                    <span className={`report-status-pill ${getStatusClass(selectedReport.status)}`}>
+                    <span className={`report-status-pill ${getStatusClass(selectedReport.statusRaw)}`}>
                       {selectedReport.status}
                     </span>
                   </span>
@@ -706,16 +716,7 @@ export function AllReportsView({
 
 // ──── Helper: Map API status to display label ────
 function mapApiStatusToDisplay(apiStatus, type = 'found') {
-  const map = {
-    'pending': type === 'lost' ? 'Menunggu Verifikasi' : 'Di Brankas FO',
-    'diverifikasi': 'Terverifikasi',
-    'verified': 'Terverifikasi',
-    'approved': 'Terverifikasi',
-    'completed': type === 'lost' ? 'Selesai Handover' : 'Sudah Diambil',
-    'claimed': 'Sudah Diambil',
-    'rejected': 'Ditolak',
-  };
-  return map[apiStatus] || (type === 'lost' ? 'Menunggu Verifikasi' : 'Di Brankas FO');
+  return reportStatusLabel(apiStatus, type);
 }
 
 export default AllReportsView;
