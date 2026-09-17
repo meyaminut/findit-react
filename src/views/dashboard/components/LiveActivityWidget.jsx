@@ -66,12 +66,6 @@ export function LiveActivityWidget({ activities }) {
         ))}
       </div>
 
-      {/* Footer Button */}
-      <div className="widget-footer-action">
-        <button type="button" className="full-width-soft-btn">
-          Lihat Log Aktivitas Lengkap
-        </button>
-      </div>
     </div>
   );
 }
