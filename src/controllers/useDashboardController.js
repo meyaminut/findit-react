@@ -4,6 +4,7 @@ import ApiService from '../services/ApiService';
 import {
   applyMatchDecision,
   applyMatchDecisionLocal,
+  markMatchHandedOver,
 } from '../services/matchSync';
 import { MatchReviewModel } from '../models/MatchReviewModel';
 import {
@@ -21,7 +22,7 @@ import {
  */
 export function useDashboardController() {
   const [activeNav, setActiveNav] = useState('Dashboard');
-  const [activeTableFilter, setActiveTableFilter] = useState('all'); // 'all' | 'vip' | 'electronics'
+  const [activeTableFilter, setActiveTableFilter] = useState('all'); // 'all' | 'lost' | 'found'
   const [searchQuery, setSearchQuery] = useState('');
   const [apiOnline, setApiOnline] = useState(false);
   
@@ -30,7 +31,6 @@ export function useDashboardController() {
   const [tickets, setTickets] = useState(() => DashboardController.getTickets());
   const [activities, setActivities] = useState(() => DashboardController.getActivities());
   const [categories, setCategories] = useState(() => DashboardController.getCategories());
-  const [unlabeledItems] = useState(() => DashboardController.getUnlabeledItems());
 
   // Modals & UI States
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -80,7 +80,7 @@ export function useDashboardController() {
           );
 
           // Transform API reports to dashboard ticket format
-          const apiTickets = allReports.map((r, idx) => {
+          const apiTickets = allReports.map((r) => {
             const isLost = r.type === 'lost';
             const dateStr = r.created_at
               ? new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
@@ -120,7 +120,7 @@ export function useDashboardController() {
               ticketNumber: `RPT-${r.id || r.ID}`,
               guestName: r.user?.name || (isLost ? 'Tamu' : 'Staf'),
               isVip: false,
-              room: r.location || '-',
+              room: r.room_number ? `Kamar ${r.room_number}` : '-',
               itemTitle: r.title || 'Barang',
               category: (r.category || 'general').toLowerCase(),
               iconType: isLost ? 'alert-circle' : 'box',
@@ -236,18 +236,18 @@ export function useDashboardController() {
   // Filtered tickets based on tab and search
   const filteredTickets = useMemo(() => {
     return tickets.filter((ticket) => {
-      // Tab filter
-      if (activeTableFilter === 'vip' && !ticket.isVip) return false;
-      if (activeTableFilter === 'electronics' && ticket.category !== 'electronics') return false;
+      // Tab filter: Semua / Lost / Found
+      if (activeTableFilter === 'lost' && ticket.type !== 'lost') return false;
+      if (activeTableFilter === 'found' && ticket.type !== 'found') return false;
 
-      // Search query
+      // Search query (nama barang & kamar)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
-          (ticket.id || '').toLowerCase().includes(q) ||
-          (ticket.guestName || '').toLowerCase().includes(q) ||
+          (ticket.itemTitle || '').toLowerCase().includes(q) ||
           (ticket.room || '').toLowerCase().includes(q) ||
-          (ticket.itemTitle || '').toLowerCase().includes(q)
+          (ticket.guestName || '').toLowerCase().includes(q) ||
+          (ticket.id || '').toLowerCase().includes(q)
         );
       }
       return true;
@@ -297,6 +297,18 @@ export function useDashboardController() {
           nextStatus: 'approved',
           extra: {},
         });
+        setTickets((prev) =>
+          prev.map((t) =>
+            t.id === ticket.id
+              ? {
+                  ...t,
+                  status: 'Terverifikasi',
+                  statusType: 'green',
+                  _candidate: { ...(t._candidate || {}), matchStatus: 'approved' },
+                }
+              : t
+          )
+        );
         showToastCallback(`Tiket ${ticket.id} terverifikasi (mode lokal).`, 'success');
       } else {
         showToastCallback(
@@ -320,6 +332,45 @@ export function useDashboardController() {
     setActionLoading(false);
     if (res.success) {
       showToastCallback(res.message, 'success');
+    }
+  };
+
+  const handleMarkHandedOver = async (ticket) => {
+    setActionLoading(true);
+    try {
+      const viaApi = await markMatchHandedOver({ ticket });
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === ticket.id ? { ...t, status: 'Diserahkan', statusType: 'blue' } : t
+        )
+      );
+      setMetrics((prev) => {
+        if (!prev?.resolvedHandover) return prev;
+        const count = (prev.resolvedHandover.value ?? 0) + 1;
+        const total = prev.totalFound?.value ?? count;
+        return {
+          ...prev,
+          resolvedHandover: {
+            ...prev.resolvedHandover,
+            value: count,
+            unit: 'Dikembalikan',
+            successRate:
+              total > 0 ? `${Math.round((count / total) * 100)}% Rate Sukses` : '0% Rate Sukses',
+          },
+        };
+      });
+      showToastCallback(
+        viaApi
+          ? `Barang ${ticket.id} berhasil ditandai Diserahkan.`
+          : `Barang ${ticket.id} ditandai Diserahkan (mode lokal).`,
+        'success'
+      );
+    } catch (err) {
+      console.warn('[Dashboard] tandai diserahkan gagal:', err.message);
+      showToastCallback(`Gagal menandai diserahkan: ${err.message}`, 'info');
+    } finally {
+      setActionLoading(false);
+      setApiReloadKey((prev) => prev + 1);
     }
   };
 
@@ -405,7 +456,6 @@ export function useDashboardController() {
     totalTicketCount: tickets.length,
     activities,
     categories,
-    unlabeledItems,
     selectedTicket,
     isQuickReportOpen,
     setIsQuickReportOpen,
@@ -415,6 +465,7 @@ export function useDashboardController() {
     handleOpenMatchModal,
     handleCloseMatchModal,
     handleConfirmMatch,
+    handleMarkHandedOver,
     handleExportRecap,
     handleSaveQuickReport
   };
@@ -422,6 +473,7 @@ export function useDashboardController() {
 
 // ──── Helpers ────
 function mapApiStatus(status, type = 'lost') {
+  if (isReportResolved(status)) return 'Diserahkan';
   return reportStatusLabel(status, type);
 }
 

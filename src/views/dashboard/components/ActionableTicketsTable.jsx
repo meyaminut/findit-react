@@ -1,10 +1,10 @@
-import React from 'react';
 import { 
   Watch, 
   Wallet, 
   Laptop, 
   Shirt, 
-  Layers 
+  Layers,
+  Search 
 } from 'lucide-react';
 
 /**
@@ -13,9 +13,12 @@ import {
  */
 export function ActionableTicketsTable({ 
   tickets, 
+  searchQuery,
+  onSearchChange,
   activeFilter, 
   onFilterChange, 
-  onOpenMatch 
+  onOpenMatch,
+  onMarkHandedOver
 }) {
   const getCategoryIcon = (iconType) => {
     switch (iconType) {
@@ -32,6 +35,12 @@ export function ActionableTicketsTable({
     }
   };
 
+  const lostCount = tickets.filter((t) => t.type === 'lost').length;
+  const foundCount = tickets.filter((t) => t.type === 'found').length;
+
+  const isMatchApproved = (ticket) =>
+    ticket._candidate?.matchStatus === 'approved' || ticket.statusType === 'green';
+
   return (
     <div className="actionable-tickets-card">
       {/* Header with Title and Filter Tabs */}
@@ -43,7 +52,21 @@ export function ActionableTicketsTable({
           </p>
         </div>
 
-        {/* Filter Pills */}
+        {/* Search Box (Nama Barang / Kamar) */}
+        <div className="tickets-search-box">
+          <Search size={14} className="tickets-search-icon" />
+          <input
+            type="text"
+            className="tickets-search-input"
+            placeholder="Cari nama barang / kamar..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange?.(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="tickets-filter-row">
         <div className="tickets-filter-pills">
           <button
             type="button"
@@ -54,17 +77,17 @@ export function ActionableTicketsTable({
           </button>
           <button
             type="button"
-            className={`filter-pill-btn ${activeFilter === 'vip' ? 'active' : ''}`}
-            onClick={() => onFilterChange('vip')}
+            className={`filter-pill-btn ${activeFilter === 'lost' ? 'active' : ''}`}
+            onClick={() => onFilterChange('lost')}
           >
-            Prioritas VIP ({tickets.filter(t => t.isVip).length})
+            Hilang / Lost ({lostCount})
           </button>
           <button
             type="button"
-            className={`filter-pill-btn ${activeFilter === 'electronics' ? 'active' : ''}`}
-            onClick={() => onFilterChange('electronics')}
+            className={`filter-pill-btn ${activeFilter === 'found' ? 'active' : ''}`}
+            onClick={() => onFilterChange('found')}
           >
-            Elektronik ({tickets.filter(t => t.category === 'electronics' || t.category === 'Elektronik').length})
+            Temuan / Found ({foundCount})
           </button>
         </div>
       </div>
@@ -156,15 +179,25 @@ export function ActionableTicketsTable({
                     )}
                   </td>
 
-                  {/* 6. Action Button (Gold / Yellow) */}
+                  {/* 6. Action Button */}
                   <td className="action-cell text-center">
-                    <button
-                      type="button"
-                      className="match-btn-gold"
-                      onClick={() => onOpenMatch && onOpenMatch(ticket)}
-                    >
-                      Cocokkan
-                    </button>
+                    {isMatchApproved(ticket) ? (
+                      <button
+                        type="button"
+                        className="handover-btn-green"
+                        onClick={() => onMarkHandedOver && onMarkHandedOver(ticket)}
+                      >
+                        Tandai Diserahkan
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="match-btn-gold"
+                        onClick={() => onOpenMatch && onOpenMatch(ticket)}
+                      >
+                        Cocokkan
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

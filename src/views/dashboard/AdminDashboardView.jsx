@@ -1,4 +1,3 @@
-import React from 'react';
 import { PlusCircle } from 'lucide-react';
 import useDashboardController from '../../controllers/useDashboardController';
 import Sidebar from './components/Sidebar';
@@ -7,7 +6,6 @@ import KpiMetrics from './components/KpiMetrics';
 import ActionableTicketsTable from './components/ActionableTicketsTable';
 import LiveActivityWidget from './components/LiveActivityWidget';
 import CategoryStatsWidget from './components/CategoryStatsWidget';
-import UnlabeledItemsGallery from './components/UnlabeledItemsGallery';
 import QuickReportModal from './components/QuickReportModal';
 import MatchVerificationModal from './components/MatchVerificationModal';
 import './AdminDashboardView.css';
@@ -30,7 +28,6 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
     tickets,
     activities,
     categories,
-    unlabeledItems,
     selectedTicket,
     isQuickReportOpen,
     setIsQuickReportOpen,
@@ -40,7 +37,7 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
     handleOpenMatchModal,
     handleCloseMatchModal,
     handleConfirmMatch,
-    handleExportRecap,
+    handleMarkHandedOver,
     handleSaveQuickReport
   } = useDashboardController();
 
@@ -118,21 +115,21 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
             <div className="grid-left-column">
               <ActionableTicketsTable
                 tickets={tickets}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 activeFilter={activeTableFilter}
                 onFilterChange={setActiveTableFilter}
                 onOpenMatch={handleOpenMatchModal}
+                onMarkHandedOver={handleMarkHandedOver}
               />
             </div>
 
-            {/* Right Column (~35%): Live Activity Feed & Category Stats */}
+            {/* Right Column (~35%): Category Stats & Live Activity Feed */}
             <div className="grid-right-column">
-              <LiveActivityWidget activities={activities} />
               <CategoryStatsWidget categories={categories} />
+              <LiveActivityWidget activities={activities} />
             </div>
           </div>
-
-          {/* Bottom Section: Unlabeled Storage Items */}
-          <UnlabeledItemsGallery items={unlabeledItems} />
         </main>
       </div>
 

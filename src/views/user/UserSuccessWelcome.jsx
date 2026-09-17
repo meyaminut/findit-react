@@ -51,6 +51,17 @@ export default function UserSuccessWelcome() {
           </button>
         </section>
 
+        {/* Done Action: kembali ke dashboard */}
+        <section className="tw-done">
+          <button
+            type="button"
+            className="tw-done-btn"
+            onClick={() => navigate('/user/dashboard')}
+          >
+            Selesai &amp; Kembali ke Dashboard
+          </button>
+        </section>
+
         {/* Footer Branding */}
         <div className="tw-brand">
           <span className="tw-brand-line tw-brand-main">

@@ -735,11 +735,56 @@
   gap: 5px;
 }
 
+.tickets-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 10px;
+}
+
+.tickets-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 230px;
+  margin-left: auto;
+}
+
+.tickets-search-icon {
+  position: absolute;
+  left: 10px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tickets-search-input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 10px 7px 30px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #0f172a;
+  transition: all 0.15s;
+}
+
+.tickets-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.tickets-search-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+}
+
 .filter-pill-btn {
   background: #f1f5f9;
   color: #475569;
   border-radius: 6px;
-  padding: 3px 8px;
+  padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
   border: none;
@@ -760,7 +805,10 @@
 /* Table */
 .tickets-table-scroll {
   width: 100%;
-  overflow-x: visible;
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border-top: 1px solid #e2e8f0;
 }
 
 .tickets-table {
@@ -778,6 +826,9 @@
   letter-spacing: 0.5px;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .tickets-table tbody td {
@@ -956,6 +1007,26 @@
 .match-btn-gold:hover {
   background: #f5b700;
   box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.handover-btn-green {
+  background: #10b981;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 4.5px 11px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.25);
+  white-space: nowrap;
+}
+
+.handover-btn-green:hover {
+  background: #059669;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1270,127 +1341,6 @@
 /* ==========================================================================
    7. Bottom Gallery: Unlabeled Items Storage
    ========================================================================== */
-.unlabeled-storage-section {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  margin-bottom: 24px;
-}
-
-.unlabeled-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.unlabeled-title-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.camera-icon-blue {
-  color: #2563eb;
-}
-
-.unlabeled-title-text {
-  font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0;
-}
-
-.view-all-storage-link {
-  background: none;
-  border: none;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.view-all-storage-link:hover {
-  text-decoration: underline;
-}
-
-.unlabeled-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-}
-
-.unlabeled-photo-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.unlabeled-photo-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
-}
-
-.unlabeled-img-container {
-  height: 120px;
-  width: 100%;
-  position: relative;
-  background: #e2e8f0;
-  overflow: hidden;
-}
-
-.unlabeled-item-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s;
-}
-
-.unlabeled-photo-card:hover .unlabeled-item-img {
-  transform: scale(1.04);
-}
-
-.room-tag-overlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(15, 23, 42, 0.82);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 4px;
-  backdrop-filter: blur(2px);
-}
-
-.unlabeled-item-info {
-  padding: 9px 11px;
-}
-
-.unlabeled-item-title {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 2px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.unlabeled-item-meta {
-  font-size: 10.5px;
-  color: #64748b;
-  display: block;
-}
-
 /* ==========================================================================
    8. Modals (Quick Report & Match Verification)
    ========================================================================== */

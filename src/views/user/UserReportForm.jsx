@@ -261,7 +261,7 @@ export default function UserReportForm() {
             </div>
           </section>
 
-          <form className="gr-form" onSubmit={handleSubmit}>
+          <form className="gr-form" onSubmit={handleSubmit} noValidate>
             {/* Banner Error Global */}
             {errorBanner && (
               <div className={`gr-error-banner gr-error-banner-${errorBanner.type}`} role="alert">

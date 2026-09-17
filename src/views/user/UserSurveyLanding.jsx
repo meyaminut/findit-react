@@ -28,7 +28,7 @@ export default function UserSurveyLanding() {
       <div className="guest-survey-frame">
         {/* ------------------------- HEADER HOTEL ------------------------ */}
         <header className="gs-header">
-          <button type="button" className="back-btn" onClick={() => navigate('/user/login')} aria-label="Back">
+          <button type="button" className="back-btn" onClick={() => navigate('/user/dashboard')} aria-label="Back">
             <ArrowLeft size={20} />
           </button>
 

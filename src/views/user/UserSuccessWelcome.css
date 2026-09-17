@@ -23,7 +23,7 @@
 }
 
 .tw-brand-logo {
-  width: 96px;
+  width: 150px;
   height: auto;
   display: block;
   margin: 0 auto 18px;
@@ -121,6 +121,32 @@
 
 .tw-backup-btn:hover {
   transform: translateY(-1px);
+}
+
+/* ------------------------- Done Action (Kembali) -------------------------- */
+.tw-done {
+  margin: 16px 20px 0;
+  text-align: center;
+}
+
+.tw-done-btn {
+  width: 100%;
+  background: #00236f;
+  border: 1px solid #00236f;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 13px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  box-shadow: 0 10px 22px -12px rgba(0, 35, 111, 0.55);
+}
+
+.tw-done-btn:hover {
+  transform: translateY(-1px);
+  background: #011a54;
 }
 
 /* ----------------------------- Footer Branding --------------------------- */

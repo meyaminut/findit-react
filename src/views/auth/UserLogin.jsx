@@ -8,7 +8,7 @@ import './UserLogin.css';
 /**
  * View Component: UserLogin
  * Login berbasis kredensial (Email + Kata Sandi) ke backend (POST /login).
- * Sukses -> setSession(token, user) -> /user/survey.
+ * Sukses -> setSession(token, user) -> /user/dashboard.
  * "Daftar Akun" -> /user/register.
  */
 export default function UserLogin() {
@@ -25,23 +25,42 @@ export default function UserLogin() {
   );
 
   const isEmailValid = email.includes('@') && email.includes('.');
-  const isFormValid = isEmailValid && password.length >= 6;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isFormValid || isLoading) return;
+    if (isLoading) return;
+
+    const formData = new FormData(e.currentTarget);
+    const emailValue = String(formData.get('email') || '').trim();
+    const passwordValue = String(formData.get('password') || '');
+    const passwordValid = passwordValue.length >= 6;
+    const emailValid = emailValue.includes('@') && emailValue.includes('.');
+
+    if (!emailValid && !passwordValid) {
+      setErrorMessage('Masukkan email yang valid dan kata sandi minimal 6 karakter.');
+      return;
+    }
+    if (!emailValid) {
+      setErrorMessage('Format email tidak valid. Periksa kembali email Anda.');
+      return;
+    }
+    if (!passwordValid) {
+      setErrorMessage('Kata sandi minimal 6 karakter.');
+      return;
+    }
+
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsLoading(true);
     try {
       const result = await apiPost('/login', {
-        Email: email.trim().toLowerCase(),
-        Password: password,
+        Email: emailValue.toLowerCase(),
+        Password: passwordValue,
       });
       if (result?.status === 'success' && result?.data?.token) {
         window.sessionStorage.removeItem('findit-registered-email');
         setSession(result.data.token, result.data.user);
-        navigate('/user/survey');
+        navigate('/user/dashboard');
         return;
       }
       setErrorMessage(result?.message || 'Login gagal. Silakan coba lagi.');
@@ -97,10 +116,10 @@ export default function UserLogin() {
               </div>
             )}
 
-            {/* Email / Username */}
+            {/* Email */}
             <div className="ul-field">
               <label htmlFor="ul-email" className="ul-label">
-                EMAIL ATAU USERNAME
+                EMAIL
               </label>
               <div className="ul-input-wrap">
                 <span className={`ul-input-icon ${isEmailValid ? 'valid' : ''}`}>
@@ -108,9 +127,10 @@ export default function UserLogin() {
                 </span>
                 <input
                   id="ul-email"
+                  name="email"
                   type="email"
                   className="ul-input"
-                  placeholder="Masukkan email atau username"
+                  placeholder="Masukkan email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -135,6 +155,7 @@ export default function UserLogin() {
                 </span>
                 <input
                   id="ul-password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   className="ul-input"
                   placeholder="Masukkan kata sandi"
@@ -155,7 +176,7 @@ export default function UserLogin() {
             </div>
 
             {/* Submit */}
-            <button type="submit" className="ul-submit-btn" disabled={isLoading || !isFormValid}>
+            <button type="submit" className="ul-submit-btn" disabled={isLoading}>
               {isLoading ? 'Memproses...' : (
                 <>
                   Masuk <span className="ul-btn-arrow">&rarr;</span>

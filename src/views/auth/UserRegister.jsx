@@ -43,14 +43,6 @@ export default function UserRegister() {
   const strengthLabel =
     passwordStrength >= 3 ? 'Kata sandi kuat' : passwordStrength === 2 ? 'Kata sandi baik' : 'Kata sandi lemah';
 
-  const isFormValid =
-    fullName.trim().length >= 2 &&
-    isEmailValid &&
-    isPhoneValid &&
-    isPasswordValid &&
-    isConfirmValid &&
-    agreeTerms;
-
   const translateValidationError = (message) => {
     if (!message) return 'Registrasi gagal. Silakan coba lagi.';
     if (message.includes('registerInput.Name') || message.includes('Field validation for \'Name\'')) {
@@ -70,7 +62,33 @@ export default function UserRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isFormValid || isLoading) return;
+    if (isLoading) return;
+
+    if (fullName.trim().length < 2) {
+      setErrorMessage('Nama lengkap minimal 2 karakter.');
+      return;
+    }
+    if (!isEmailValid) {
+      setErrorMessage('Format email tidak valid. Gunakan email yang benar.');
+      return;
+    }
+    if (!isPhoneValid) {
+      setErrorMessage('Nomor WhatsApp/telepon minimal 10 digit.');
+      return;
+    }
+    if (!isPasswordValid) {
+      setErrorMessage('Kata sandi terlalu pendek. Minimal 8 karakter.');
+      return;
+    }
+    if (!isConfirmValid) {
+      setErrorMessage('Konfirmasi kata sandi tidak sama.');
+      return;
+    }
+    if (!agreeTerms) {
+      setErrorMessage('Anda harus menyetujui Syarat &amp; Ketentuan terlebih dahulu.');
+      return;
+    }
+
     setErrorMessage(null);
     setIsLoading(true);
     try {
@@ -128,7 +146,7 @@ export default function UserRegister() {
         <main className="ur-form-card">
           <h1 className="ur-heading">Buat Akun Baru</h1>
 
-          <form className="ur-form" onSubmit={handleSubmit}>
+          <form className="ur-form" onSubmit={handleSubmit} noValidate>
             {/* Alert Error */}
             {errorMessage && (
               <div className="ur-alert-error" role="alert">
@@ -339,7 +357,7 @@ export default function UserRegister() {
             </label>
 
             {/* Submit */}
-            <button type="submit" className="ur-submit-btn" disabled={isLoading || !isFormValid}>
+            <button type="submit" className="ur-submit-btn" disabled={isLoading}>
               {isLoading ? 'Memproses...' : (
                 <>
                   Daftar Akun <span className="ur-btn-arrow">&rarr;</span>

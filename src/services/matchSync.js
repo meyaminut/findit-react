@@ -86,6 +86,22 @@ const syncReportStatus = async (reportId, status) => {
 };
 
 /**
+ * Tandai barang sebagai "Diserahkan" (HANDED_OVER / dikembalikan).
+ * Update status kedua report (lost & found) via API. Khusus baris yang
+ * match-nya sudah approved. Mengembalikan true bila update API berhasil.
+ */
+export const markMatchHandedOver = async ({ ticket }) => {
+  const reportStatus = 'dikembalikan';
+  if (ticket?._apiId == null) return false;
+  await syncReportStatus(ticket._apiId, reportStatus);
+  const foundId = ticket?._candidate?.found_report_id;
+  if (foundId != null) {
+    await syncReportStatus(foundId, reportStatus);
+  }
+  return true;
+};
+
+/**
  * Terapkan keputusan verifikasi (approved/rejected) ke match + kedua report-nya.
  * `matches` opsional: cache hasil GET /matches (hindari refetch berulang).
  * Mengembalikan true bila record match benar-benar di-update via API.

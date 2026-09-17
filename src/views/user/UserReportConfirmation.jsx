@@ -6,6 +6,7 @@ import {
   Bell,
   Check,
   Copy,
+  LayoutDashboard,
   Lock,
 } from 'lucide-react';
 import { getCurrentUser } from '../../services/api';
@@ -173,6 +174,10 @@ export default function UserReportConfirmation() {
           <Lock size={12} />
           Data laporan dienkripsi &amp; hanya diakses tim verifikasi internal.
         </p>
+
+        <button type="button" className="uc-dashboard-btn" onClick={() => navigate('/user/dashboard')}>
+          <LayoutDashboard size={16} /> Kembali ke Dashboard
+        </button>
       </div>
     </div>
   );

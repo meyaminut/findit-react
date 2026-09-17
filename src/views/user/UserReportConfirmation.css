@@ -472,6 +472,43 @@
   margin: 0;
 }
 
+/* --------------------------- Tombol Kembali ke Dashboard ------------- */
+.uc-dashboard-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(100% - 40px);
+  margin: 0 20px 26px;
+  background: linear-gradient(135deg, #00236f 0%, #0a3aa8 60%, #1250cf 100%);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 15px 22px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -10px rgba(0, 35, 111, 0.65);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.uc-dashboard-btn:hover {
+  background: linear-gradient(135deg, #0a3aa8 0%, #1250cf 60%, #1d62e0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px -12px rgba(0, 35, 111, 0.7);
+}
+
+.uc-dashboard-btn:active {
+  transform: translateY(0);
+}
+
+.uc-dashboard-btn:focus-visible {
+  outline: 2px solid #fea619;
+  outline-offset: 2px;
+}
+
 /* ------------------------------- Responsive ----------------------------- */
 @media (min-width: 480px) {
   .user-confirmation-page {
