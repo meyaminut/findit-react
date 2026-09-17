@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, PlusCircle } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import useDashboardController from '../../controllers/useDashboardController';
 import Sidebar from './components/Sidebar';
 import TopNavbar from './components/TopNavbar';
@@ -36,6 +36,7 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
     setIsQuickReportOpen,
     toastNotification,
     actionLoading,
+    apiOnline,
     handleOpenMatchModal,
     handleCloseMatchModal,
     handleConfirmMatch,
@@ -76,23 +77,23 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
             <div className="hero-titles-col">
               {/* Top Badges Row */}
               <div className="hero-badges-row">
-                <span className="desk-badge-blue">FRONT OFFICE DESK</span>
-                <span className="online-badge-green">
-                  <span className="green-status-dot"></span>
-                  Sistem Online
-                </span>
+                {apiOnline ? (
+                  <span className="online-badge-green">
+                    <span className="green-status-dot"></span>
+                    Terhubung ke Server
+                  </span>
+                ) : (
+                  <span className="online-badge-gray">
+                    <span className="gray-status-dot"></span>
+                    Mode Offline — Data Lokal
+                  </span>
+                )}
               </div>
 
               {/* Main Heading */}
               <h1 className="hero-main-title">
                 Dashboard Operasional Lost &amp; Found
               </h1>
-
-              {/* Subtitle / Shift Meta */}
-              <div className="hero-shift-meta">
-                <Clock size={15} className="shift-clock-icon" />
-                <span>Grand Melia Jakarta • Shift Pagi (07:00 - 15:00 WIB)</span>
-              </div>
             </div>
 
             {/* Right Action Buttons */}

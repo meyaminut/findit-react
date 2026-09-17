@@ -1,16 +1,38 @@
 import React from 'react';
-import { X, CheckCircle2, AlertCircle, MapPin, Clock, Tag } from 'lucide-react';
+import { X, CheckCircle2, PackageSearch } from 'lucide-react';
 
 /**
  * View Component: MatchVerificationModal
  * Modal triggered by clicking "Cocokkan" on any ticket row.
+ * Candidate side is rendered from REAL matched data (ticket._candidate)
+ * or from an honest empty state when no pairing exists yet.
  */
+function foundPlaceholder(candidate) {
+  return candidate.found_report_id
+    ? `Barang Temuan #${candidate.found_report_id}`
+    : '-';
+}
+
+const matchStatusLabel = (status) => {
+  const lower = String(status || '').toLowerCase();
+  if (lower === 'approved') return 'Terverifikasi';
+  if (lower === 'rejected') return 'Ditolak';
+  return 'Menunggu Verifikasi';
+};
+
 export function MatchVerificationModal({ ticket, onClose, onConfirmMatch, isLoading }) {
   if (!ticket) return null;
 
+  const candidate = ticket._candidate;
+  const hasCandidate = Boolean(candidate);
+
+  const statusClass = candidate?.matchStatus === 'approved'
+    ? 'match-status-approved'
+    : 'match-status-pending';
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-dialog-box modal-match-box" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-dialog-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-top-bar">
           <div className="modal-title-wrap">
             <CheckCircle2 size={20} className="text-amber-500" />
@@ -29,42 +51,62 @@ export function MatchVerificationModal({ ticket, onClose, onConfirmMatch, isLoad
             <div className="match-meta-list">
               <div className="match-meta-row">
                 <span className="meta-label">Nama Tamu:</span>
-                <span className="meta-value bold">{ticket.guestName} {ticket.isVip && '(VIP)'}</span>
+                <span className="meta-value bold">
+                  {ticket.guestName} {ticket.isVip ? '(VIP)' : ''}
+                </span>
               </div>
               <div className="match-meta-row">
                 <span className="meta-label">Kamar:</span>
-                <span className="meta-value">{ticket.room}</span>
+                <span className="meta-value">{ticket.room || '-'}</span>
               </div>
               <div className="match-meta-row">
                 <span className="meta-label">Waktu:</span>
-                <span className="meta-value">{ticket.reportTime}</span>
+                <span className="meta-value">{ticket.reportTime || '-'}</span>
               </div>
               <div className="match-meta-row">
-                <span className="meta-label">Catatan:</span>
-                <span className="meta-value">{ticket.locationDetail || ticket.priorityTag || 'N/A'}</span>
+                <span className="meta-label">Deskripsi:</span>
+                <span className="meta-value">{ticket.description || '-'}</span>
               </div>
             </div>
           </div>
 
-          {/* AI Matching Candidate */}
+          {/* Paired Found Item (real data) or honest empty state */}
           <div className="match-card-side storage-side">
-            <div className="match-side-badge badge-green">KANDIDAT BARANG TEMUAN</div>
-            <div className="ai-confidence-pill">94% Skor Kecocokan AI</div>
-            <h4 className="match-item-name">Temuan Serupa di Storage HK</h4>
-            <div className="match-meta-list">
-              <div className="match-meta-row">
-                <span className="meta-label">Lokasi Temu:</span>
-                <span className="meta-value">Housekeeping Floor Storage (Lantai 5)</span>
+            {hasCandidate ? (
+              <>
+                <div className="match-side-badge badge-green">PASANGAN BARANG TEMUAN</div>
+                <h4 className="match-item-name">{candidate.name}</h4>
+                <div className="match-meta-list">
+                  <div className="match-meta-row">
+                    <span className="meta-label">Lokasi Temu:</span>
+                    <span className="meta-value">{candidate.locationFound || '-'}</span>
+                  </div>
+                  <div className="match-meta-row">
+                    <span className="meta-label">Ditemukan Oleh:</span>
+                    <span className="meta-value">{candidate.finderName || foundPlaceholder(candidate)}</span>
+                  </div>
+                  <div className="match-meta-row">
+                    <span className="meta-label">Waktu Temu:</span>
+                    <span className="meta-value">{candidate.foundAt || '-'}</span>
+                  </div>
+                  <div className="match-meta-row">
+                    <span className="meta-label">Status:</span>
+                    <span className={`meta-value ${statusClass}`}>
+                      {matchStatusLabel(candidate.matchStatus)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="match-empty-state">
+                <PackageSearch size={30} className="match-empty-icon" />
+                <p className="match-empty-title">Belum Ada Pasangan</p>
+                <p className="match-empty-text">
+                  Laporan ini belum dipasangkan dengan barang temuan. Buat pasangan manualnya di
+                  halaman Match Review (menu "Verifikasi") terlebih dahulu.
+                </p>
               </div>
-              <div className="match-meta-row">
-                <span className="meta-label">Ditemukan Oleh:</span>
-                <span className="meta-value">Siti Aminah (HK Shift Pagi)</span>
-              </div>
-              <div className="match-meta-row">
-                <span className="meta-label">Status Fisik:</span>
-                <span className="meta-value text-green-700 font-semibold">Tersimpan di Brankas FO</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -76,7 +118,12 @@ export function MatchVerificationModal({ ticket, onClose, onConfirmMatch, isLoad
             type="button"
             className="btn-confirm-match-gold"
             onClick={() => onConfirmMatch(ticket.id)}
-            disabled={isLoading}
+            disabled={isLoading || !hasCandidate}
+            title={
+              !hasCandidate
+                ? 'Belum ada pasangan. Buat pasangan di halaman Match Review (menu Verifikasi) terlebih dahulu.'
+                : undefined
+            }
           >
             {isLoading ? 'Memverifikasi...' : 'Konfirmasi Kecocokan & Verifikasi'}
           </button>

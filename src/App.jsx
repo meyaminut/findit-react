@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
+import { getToken } from './services/ApiService';
+import AuthController from './controllers/AuthController';
 
 import AdminLoginView from './views/auth/AdminLoginView';
 import AdminDashboardView from './views/dashboard/AdminDashboardView';
@@ -75,11 +77,12 @@ function App() {
  * - 'admin-management' (11. Kelola Admin / Admin Management Console)
  */
 function AdminShell() {
-  // Default route di-pin ke 'dashboard' (halaman utama saat pertama kali aplikasi diakses)
-  const [activeRoute, setActiveRoute] = useState('dashboard');
+  // Gate: akses /admin tanpa token sah -> tampilkan halaman login dulu.
+  const [activeRoute, setActiveRoute] = useState(() => (getToken() ? 'dashboard' : 'login'));
   const [selectedMatchId, setSelectedMatchId] = useState(null);
 
   const handleLogout = () => {
+    AuthController.logout();
     setActiveRoute('login');
   };
 

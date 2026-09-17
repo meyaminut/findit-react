@@ -47,9 +47,8 @@ export function LiveActivityWidget({ activities }) {
       <div className="widget-header-row">
         <div className="widget-title-group">
           <span className="live-pulse-dot"></span>
-          <h3 className="widget-title-text">Aktivitas Langsung</h3>
+          <h3 className="widget-title-text">Aktivitas Terbaru</h3>
         </div>
-        <span className="realtime-tag">REAL-TIME</span>
       </div>
 
       {/* Activity Timeline List */}

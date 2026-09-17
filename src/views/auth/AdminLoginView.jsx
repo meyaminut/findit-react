@@ -5,12 +5,9 @@ import {
   Eye, 
   EyeOff, 
   ArrowRight, 
-  ShieldCheck, 
   AlertCircle, 
   CheckCircle2, 
-  X,
-  Clock,
-  Headphones
+  X
 } from 'lucide-react';
 import useAuthController from '../../controllers/useAuthController';
 import Logo from '../components/Logo';
@@ -77,29 +74,8 @@ export default function AdminLoginView({ onLoginSuccess }) {
                   <Logo variant="dark" withSubtitle={true} size="large" />
                 </div>
 
-                {/* Operations Portal Pill */}
-                <div className="portal-pill">
-                  <span className="portal-dot"></span>
-                  <span>OPERATIONAL PORTAL</span>
-                </div>
-
                 {/* Headings */}
-                <h1 className="login-card-title">Front Desk & Order Taker</h1>
-                <p className="login-card-subtitle">
-                  Grand Melia Jakarta • Property #ID-JKT08
-                </p>
-
-                {/* Active Operational Window Banner */}
-                <div className="operational-window-box">
-                  <div className="window-info-col">
-                    <Clock size={16} className="window-clock-icon" />
-                    <div className="window-text">
-                      <span className="window-label">ACTIVE OPERATIONAL WINDOW</span>
-                      <span className="window-time">Shift Pagi: 07:00 – 15:00 WIB</span>
-                    </div>
-                  </div>
-                  <span className="window-status-badge">Online</span>
-                </div>
+                <h1 className="login-card-title">FindIt Admin Login</h1>
 
                 {/* Status/Error Notification */}
                 {errorMessage && (
@@ -121,7 +97,7 @@ export default function AdminLoginView({ onLoginSuccess }) {
                   {/* Email / Username Field */}
                   <div className="form-group">
                     <label htmlFor="work-email" className="form-label">
-                      Email / Username Karyawan
+                      Email
                     </label>
                     <div className="input-wrapper email-input-wrapper">
                       <span className="input-icon-left">
@@ -143,7 +119,7 @@ export default function AdminLoginView({ onLoginSuccess }) {
                   {/* Password / PIN Field */}
                   <div className="form-group">
                     <label htmlFor="admin-password" className="form-label">
-                      Password / PIN Keamanan
+                      Password
                     </label>
                     <div className="input-wrapper password-input-wrapper">
                       <span className="input-icon-left">
@@ -180,7 +156,7 @@ export default function AdminLoginView({ onLoginSuccess }) {
                         checked={rememberSession}
                         onChange={(e) => setRememberSession(e.target.checked)}
                       />
-                      <span className="remember-text">Ingat Sesi Kerja (8 Jam)</span>
+                      <span className="remember-text">Ingat saya</span>
                     </label>
 
                     <button
@@ -208,30 +184,11 @@ export default function AdminLoginView({ onLoginSuccess }) {
                         <span>Masuk ke Admin Panel</span>
                         <ArrowRight size={17} className="btn-arrow" />
                       </>
-                    )}
+)}
                   </button>
-
-                  {/* Housekeeping Dispatch Line */}
-                  <div className="dispatch-contact-info">
-                    <Headphones size={14} className="dispatch-headset-icon" />
-                    <span>Housekeeping Dispatch: Ext. 402</span>
-                  </div>
                 </form>
               </div>
-
-              {/* Bottom Security Footer Box */}
-              <div className="card-security-footer">
-                <ShieldCheck size={16} className="footer-shield-icon" />
-                <span className="footer-shield-text">
-                  256-Bit SSL Encrypted • Restricted Access for Authorized Hotel Staff Only
-                </span>
-              </div>
             </div>
-
-            {/* Outside Card Footer Text */}
-            <p className="login-legal-footer">
-              Find It! v4.2.1-lts • Hospitality Integrity Cloud • GDPR & PDP Compliant
-            </p>
           </>
         ) : (
           /* Operational Session View after Successful Login */
@@ -253,15 +210,15 @@ export default function AdminLoginView({ onLoginSuccess }) {
               <X size={18} />
             </button>
             <div className="modal-header">
-              <h3>Reset Operational Credentials</h3>
+              <h3>Reset Password</h3>
               <p>
-                Masukkan email staf Grand Melia <code>@grandmelia.co.id</code>. 
-                Sistem keamanan akan mengirimkan tautan reset & OTP ke terminal Anda.
+                Masukkan email terdaftar Anda. Sistem akan mengirimkan tautan
+                reset ke email tersebut.
               </p>
             </div>
             <form onSubmit={handleForgotPassword}>
               <div className="form-group">
-                <label className="form-label">Email Karyawan</label>
+                <label className="form-label">Email</label>
                 <div className="input-wrapper">
                   <span className="input-icon-left">
                     <Mail size={17} />
@@ -271,7 +228,7 @@ export default function AdminLoginView({ onLoginSuccess }) {
                     className="form-input"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="nama.user@grandmelia.co.id"
+                    placeholder="nama.user@gmail.com"
                     required
                   />
                 </div>

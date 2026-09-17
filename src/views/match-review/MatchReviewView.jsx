@@ -6,16 +6,16 @@ import {
   Plus, 
   Trash2, 
   ArrowRight, 
-  Sparkles, 
   ShieldCheck, 
   User, 
   MapPin, 
   Clock, 
   X, 
   Layers, 
-  Check, 
+Check,
   AlertCircle,
   Package,
+  Link2,
   RotateCcw,
   ExternalLink
 } from 'lucide-react';
@@ -36,7 +36,7 @@ import './MatchReviewView.css';
  * View Component: MatchReviewView (Verifikasi & Pencocokan)
  * Master Data Table layout mirroring the Found Items (Barang Temuan) master inventory.
  * Displays all guest claim tickets, automatically pairs them with Housekeeping found item candidates,
- * evaluates confidence scores, and provides an interactive inspection modal for FO verification.
+ * and provides an interactive inspection modal for FO verification.
  */
 
 // ──── API→UI mapping helpers (API-first) ────
@@ -60,12 +60,6 @@ const formatReportTimestamp = (iso) => {
   return `${dateStr}, ${timeStr} WIB`;
 };
 
-const normalizeConfidence = (raw) => {
-  const num = Number(raw);
-  if (!Number.isFinite(num)) return 0;
-  return num <= 1 ? Math.round(num * 100) : Math.round(num);
-};
-
 // Konversi satu report live (lost) menjadi ticket UI + kandidat (dari match & found report).
 const buildApiTickets = (reports, matches) => {
   const list = Array.isArray(reports) ? reports : [];
@@ -73,10 +67,11 @@ const buildApiTickets = (reports, matches) => {
   const lostReports = list.filter((r) => String(r.type || '').toLowerCase() === 'lost');
   const foundReports = list.filter((r) => String(r.type || '').toLowerCase() === 'found');
   const foundById = new Map(foundReports.map((f) => [String(f.id ?? f.ID), f]));
+  const isActiveMatch = (m) => String(m.status || '').toLowerCase() !== 'rejected';
 
   return lostReports.map((r) => {
     const reportId = String(r.id ?? r.ID);
-    const pairMatch = matchList.find((m) => String(m.lost_report_id) === reportId) || null;
+    const pairMatch = matchList.find((m) => String(m.lost_report_id) === reportId && isActiveMatch(m)) || null;
     let candidate = null;
 
     if (pairMatch) {
@@ -90,14 +85,11 @@ const buildApiTickets = (reports, matches) => {
         found_report_id: foundId,
         name: found?.title || (foundId ? `Barang Temuan #${foundId}` : 'Barang Temuan'),
         category: found?.category || pairMatch.category || '',
-        color: found?.color || '',
         photoUrl: resolveMediaUrl(found?.photo_url || ''),
-        confidenceScore: normalizeConfidence(pairMatch.similarity_score),
-        finderName: found?.user?.name || 'Staf Housekeeping',
+        finderName: found?.user?.name || '',
         roomNumber: found?.room_number || '',
         locationFound:
           found?.location || (found?.room_number ? `Kamar ${found.room_number}` : pairMatch.location || ''),
-        storageLocation: 'Brankas FO',
         foundAt: formatReportTimestamp(found?.created_at),
         description: found?.description || '',
         notes: pairMatch.activity_note || '',
@@ -106,7 +98,7 @@ const buildApiTickets = (reports, matches) => {
     }
 
     return {
-      id: `#RPT-${reportId}`,
+      id: r.report_identifier || `#RPT-${reportId}`,
       reportIdentifier: r.report_identifier || '',
       _apiId: reportId,
       _source: 'api',
@@ -128,6 +120,87 @@ const buildApiTickets = (reports, matches) => {
   });
 };
 
+// Opsi barang temuan yang tersedia untuk dipasangkan manual ke 1 laporan lost.
+// Hanya found ber-status 'baru' yang belum terikat match aktif (non-rejected).
+// Urut: kecocokan kamar lalu kategori, sebagai saran jujur berbasis data.
+const buildFoundPickerOptions = (ticket, reports, matches) => {
+  const reportList = Array.isArray(reports) ? reports : [];
+  const matchList = Array.isArray(matches) ? matches : [];
+  const foundReports = reportList.filter(
+    (r) => String(r.type || '').toLowerCase() === 'found'
+  );
+  const activeMatchFoundIds = new Set(
+    matchList
+      .filter((m) => String(m.status || '').toLowerCase() !== 'rejected')
+      .map((m) => String(m.found_report_id))
+      .filter(Boolean)
+  );
+  const pool = foundReports.filter((f) => {
+    const isAvailable =
+      String(f.status || '').toLowerCase() === 'baru' &&
+      !activeMatchFoundIds.has(String(f.id ?? f.ID));
+    return isAvailable;
+  });
+
+  const normalize = (s) => (s || '').trim().toLowerCase();
+  const ticketRoom = String(ticket?.roomNumber || '').trim();
+  const ticketCat = normalize(ticket?.category);
+
+  const suggestionScore = (f) => {
+    let score = 0;
+    const foundRoom = String(f.room_number || '').trim();
+    const foundCat = normalize(f.category);
+    if (foundRoom && ticketRoom && foundRoom === ticketRoom) score += 2;
+    if (foundCat && ticketCat && foundCat === ticketCat) score += 1;
+    return score;
+  };
+
+  return pool
+    .map((f) => ({
+      ...f,
+      _suggest: suggestionScore(f),
+      _apiId: f.id ?? f.ID,
+    }))
+    .sort(
+      (a, b) =>
+        (b._suggest - a._suggest) ||
+        String(a.title || '').localeCompare(String(b.title || ''))
+    );
+};
+
+// Baris satu barang temuan di dalam picker pasangan.
+const PickerItem = ({ found, suggested, onPick, loading }) => (
+  <div className={`pairing-picker-item ${suggested ? 'is-suggested' : ''}`}>
+    <div className="pairing-item-thumb">
+      {found.photo_url ? (
+        <img src={resolveMediaUrl(found.photo_url)} alt={found.title} className="pairing-item-img" />
+      ) : (
+        <Package size={18} />
+      )}
+    </div>
+    <div className="pairing-item-info">
+      <div className="pairing-item-title-row">
+        <span className="pairing-item-title">{found.title || 'Barang'}</span>
+        {suggested && <span className="pairing-suggest-badge">Disarankan</span>}
+      </div>
+      <span className="pairing-item-sub">
+        {found.category || ''}
+        {found.room_number ? ` • Kamar ${found.room_number}` : ''}
+        {found.location ? ` • ${found.location}` : ''}
+      </span>
+    </div>
+    <button
+      type="button"
+      className="pairing-pick-btn"
+      onClick={onPick}
+      disabled={loading}
+    >
+      <Link2 size={13} />
+      <span>{loading ? 'Memilih...' : 'Pilih'}</span>
+    </button>
+  </div>
+);
+
 export function MatchReviewView({ 
   activeNav = 'Verifikasi', 
   onNavChange, 
@@ -142,6 +215,12 @@ export function MatchReviewView({
   const [actionLoading, setActionLoading] = useState(false);
   const [apiTickets, setApiTickets] = useState(null);
   const [apiActive, setApiActive] = useState(false);
+  const [apiChecked, setApiChecked] = useState(false);
+  const [apiReportsRaw, setApiReportsRaw] = useState([]);
+  const [apiMatchesRaw, setApiMatchesRaw] = useState([]);
+  const [pickerTicket, setPickerTicket] = useState(null);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerLoading, setPickerLoading] = useState(false);
 
   const displayTickets = apiActive && Array.isArray(apiTickets) ? apiTickets : tickets;
 
@@ -153,20 +232,26 @@ export function MatchReviewView({
   // API-first: tarik laporan lost + match dari backend; fallback StorageService offline.
   const loadApiTickets = useCallback(async () => {
     try {
-      const health = await ApiService.checkHealth();
-      if (!health.online) {
+      try {
+        const health = await ApiService.checkHealth();
+        if (!health.online) {
+          setApiActive(false);
+          return;
+        }
+        const [reports, matches] = await Promise.all([
+          ApiService.getReports(),
+          ApiService.getMatches(),
+        ]);
+        setApiTickets(buildApiTickets(reports, matches));
+        setApiReportsRaw(Array.isArray(reports) ? reports : []);
+        setApiMatchesRaw(Array.isArray(matches) ? matches : []);
+        setApiActive(true);
+      } catch (err) {
+        console.warn('[MatchReviewView] API tidak tersedia, pakai data lokal:', err.message);
         setApiActive(false);
-        return;
       }
-      const [reports, matches] = await Promise.all([
-        ApiService.getReports(),
-        ApiService.getMatches(),
-      ]);
-      setApiTickets(buildApiTickets(reports, matches));
-      setApiActive(true);
-    } catch (err) {
-      console.warn('[MatchReviewView] API tidak tersedia, pakai data lokal:', err.message);
-      setApiActive(false);
+    } finally {
+      setApiChecked(true);
     }
   }, []);
 
@@ -268,6 +353,10 @@ export function MatchReviewView({
   };
 
   const handleConfirmVerification = async (ticket, candidate) => {
+    if (!candidate) {
+      showToast('Belum ada kandidat barang temuan. Gunakan tombol Pasangkan untuk mencari barang temuan.', 'info');
+      return;
+    }
     setActionLoading(true);
     try {
       const user = ApiService.getCurrentUser();
@@ -284,6 +373,10 @@ export function MatchReviewView({
   };
 
   const handleRejectRelation = async (ticket, candidate) => {
+    if (!candidate) {
+      showToast('Belum ada kandidat barang temuan untuk dilepas.', 'info');
+      return;
+    }
     setActionLoading(true);
     try {
       await decideMatch(ticket, candidate, 'rejected');
@@ -309,6 +402,52 @@ export function MatchReviewView({
   // Inspecting candidate helper
   const inspectingCandidate = inspectingTicket ? ticketPairings[inspectingTicket.id] : null;
 
+  // ── Create Pairing Manual (picker) ──
+  const pickerOptions = useMemo(() => {
+    if (!pickerTicket) return [];
+    return buildFoundPickerOptions(pickerTicket, apiReportsRaw, apiMatchesRaw);
+  }, [pickerTicket, apiReportsRaw, apiMatchesRaw]);
+
+  const filteredPickerOptions = useMemo(() => {
+    const q = pickerSearch.toLowerCase().trim();
+    if (!q) return pickerOptions;
+    return pickerOptions.filter((f) => {
+      const title = String(f.title || '').toLowerCase();
+      const room = String(f.room_number || '');
+      const identifier = String(f.report_identifier || '');
+      return title.includes(q) || room.includes(q) || identifier.toLowerCase().includes(q);
+    });
+  }, [pickerOptions, pickerSearch]);
+
+  const openPicker = (ticket) => {
+    setPickerSearch('');
+    setPickerTicket(ticket);
+  };
+
+  const handleCreatePairing = async (found) => {
+    if (!pickerTicket?._apiId || !found?._apiId) {
+      showToast('Data laporan tidak lengkap untuk membuat pasangan.', 'info');
+      return;
+    }
+    setPickerLoading(true);
+    try {
+      const created = await ApiService.createMatch(pickerTicket._apiId, found._apiId, 0);
+      const matchId = created?.id ?? created?.ID ?? '';
+      showToast(
+        `Pasangan #${matchId} berhasil dibuat dan menunggu verifikasi.`,
+        'success'
+      );
+      setPickerTicket(null);
+      refreshData();
+      await loadApiTickets();
+    } catch (err) {
+      console.warn('[MatchReview] createMatch gagal:', err.message);
+      showToast(`Gagal membuat pasangan: ${err.message}`, 'info');
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
   return (
     <div className="verification-app-layout">
       {/* 1. Left Sidebar Navigation */}
@@ -328,6 +467,12 @@ export function MatchReviewView({
         />
 
         <main className="verification-scrollable-content">
+          {apiChecked && !apiActive && (
+            <div className="offline-api-notice" role="status">
+              Backend tidak dapat dihubungi — menampilkan data lokal. Perubahan hanya akan
+              tersimpan di perangkat ini (mode offline).
+            </div>
+          )}
           {/* Header & KPI Summary Cards (Identical Layout to FoundItemsLogView) */}
           <section className="verification-header-section">
             <div className="verification-title-group">
@@ -470,7 +615,6 @@ export function MatchReviewView({
                     <th>TAMU &amp; NO. KAMAR</th>
                     <th>BARANG DIKLAIM</th>
                     <th>KANDIDAT TEMUAN HK</th>
-                    <th style={{ width: '150px' }}>SKOR SINKRONISASI</th>
                     <th style={{ width: '140px' }}>WAKTU LAPOR</th>
                     <th style={{ width: '150px' }}>STATUS</th>
                     <th style={{ width: '170px', textAlign: 'center' }}>AKSI</th>
@@ -536,7 +680,7 @@ export function MatchReviewView({
                               <div className="candidate-info-stack">
                                 <span className="candidate-title">{candidate.name}</span>
                                 <span className="candidate-sub">
-                                  <MapPin size={10} /> {candidate.locationFound || candidate.storageLocation || 'HK Storage'}
+                                  <MapPin size={10} /> {candidate.locationFound || '-'}
                                 </span>
                               </div>
                             </div>
@@ -545,24 +689,12 @@ export function MatchReviewView({
                           )}
                         </td>
 
-                        {/* 5. Skor Sinkronisasi */}
-                        <td className="cell-confidence">
-                          {candidate ? (
-                            <span className={`confidence-pill-score ${candidate.confidenceScore >= 75 ? 'high' : 'medium'}`}>
-                              <Sparkles size={12} />
-                              {candidate.confidenceScore}% Cocok
-                            </span>
-                          ) : (
-                            <span className="confidence-empty">-</span>
-                          )}
-                        </td>
-
-                        {/* 6. Waktu Lapor */}
+                        {/* 5. Waktu Lapor */}
                         <td className="cell-report-time">
                           <span className="report-time-text">{t.reportedAt || '-'}</span>
                         </td>
 
-                        {/* 7. Status */}
+                        {/* 6. Status */}
                         <td className="cell-status">
                           <span className={`status-pill ${isPending ? 'pending' : 'verified'}`}>
                             <span className="status-dot" />
@@ -570,17 +702,27 @@ export function MatchReviewView({
                           </span>
                         </td>
 
-                        {/* 8. Aksi */}
+                        {/* 7. Aksi */}
                         <td className="cell-actions" style={{ textAlign: 'center' }}>
                           <div className="action-buttons-flex">
                             <button
                               type="button"
                               className={isPending ? 'btn-table-verify' : 'btn-table-details'}
                               onClick={() => setInspectingTicket(t)}
-                              title="Buka rincian pencocokan & SOP double-blind"
+                              title="Buka rincian perbandingan"
                             >
                               <span>{isPending ? 'Verifikasi' : 'Detail'}</span>
                               <ArrowRight size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-table-link"
+                              onClick={() => openPicker(t)}
+                              title="Cari & pasangkan barang temuan secara manual"
+                            >
+                              <Link2 size={13} />
+                              <span>Pasangkan</span>
                             </button>
 
                             <button
@@ -625,7 +767,7 @@ export function MatchReviewView({
                     Pemeriksaan Ciri Khusus: {inspectingTicket.id}
                   </h3>
                   <span className="modal-sub-heading">
-                    SOP FO Double-Blind Check • Tamu: {inspectingTicket.guestName} (Kamar {inspectingTicket.roomNumber})
+                    Perbandingan dua sisi: Laporan Klaim Tamu vs Barang Temuan
                   </span>
                 </div>
               </div>
@@ -659,8 +801,8 @@ export function MatchReviewView({
                     <span className="meta-value">{inspectingTicket.category || '-'}</span>
                   </div>
                   <div className="compare-meta-item">
-                    <span className="meta-label">Warna Utama</span>
-                    <span className="meta-value">{inspectingTicket.color || '-'}</span>
+                    <span className="meta-label">Waktu Lapor</span>
+                    <span className="meta-value">{inspectingTicket.reportedAt || '-'}</span>
                   </div>
                 </div>
 
@@ -696,24 +838,19 @@ export function MatchReviewView({
                       )}
                       <div>
                         <h4 className="compare-item-title">{inspectingCandidate.name}</h4>
-                        <span className="confidence-pill-score high">
-                          <Sparkles size={11} /> {inspectingCandidate.confidenceScore || 95}% Kecocokan AI
-                        </span>
                       </div>
                     </div>
 
                     <div className="compare-meta-grid">
-                      <div className="compare-meta-item">
-                        <span className="meta-label">Petugas Penemu</span>
-                        <span className="meta-value bold">{inspectingCandidate.finderName || 'Staf Housekeeping'}</span>
-                      </div>
+                      {inspectingCandidate.finderName && (
+                        <div className="compare-meta-item">
+                          <span className="meta-label">Petugas Penemu</span>
+                          <span className="meta-value bold">{inspectingCandidate.finderName}</span>
+                        </div>
+                      )}
                       <div className="compare-meta-item">
                         <span className="meta-label">Lokasi Ditemukan</span>
-                        <span className="meta-value">{inspectingCandidate.locationFound || `Kamar ${inspectingCandidate.roomNumber}`}</span>
-                      </div>
-                      <div className="compare-meta-item">
-                        <span className="meta-label">Lokasi Simpan</span>
-                        <span className="meta-value">{inspectingCandidate.storageLocation || 'Brankas FO'}</span>
+                        <span className="meta-value">{inspectingCandidate.locationFound || '-'}</span>
                       </div>
                       <div className="compare-meta-item">
                         <span className="meta-label">Waktu Temu</span>
@@ -724,7 +861,7 @@ export function MatchReviewView({
                     <div className="confidential-feature-box hk">
                       <span className="feature-label">Deskripsi Fisik Lapangan HK:</span>
                       <p className="feature-text">
-                        {inspectingCandidate.description || inspectingCandidate.notes || 'Barang dalam kondisi baik tersimpan aman di loker.'}
+                        {inspectingCandidate.description || inspectingCandidate.notes || '-'}
                       </p>
                     </div>
                   </>
@@ -733,19 +870,12 @@ export function MatchReviewView({
                     <AlertCircle size={28} className="text-amber-500" />
                     <h4>Belum Ada Barang Temuan Serupa</h4>
                     <p>
-                      Sistem belum menemukan barang temuan dari Housekeeping yang memiliki kemiripan kategori atau nomor kamar yang cocok.
+                      Laporan klaim ini belum dipasangkan dengan barang temuan.
+                      Gunakan tombol Pasangkan untuk mencari &amp; memasangkan.
                     </p>
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Modal SOP Check Notice */}
-            <div className="modal-sop-banner">
-              <ShieldCheck size={16} />
-              <span>
-                <strong>Protokol SOP Front Office:</strong> Pastikan minimal 3 poin verifikasi rahasia (warna, ciri khusus, isi/seri) telah dikonfirmasi oleh tamu sebelum menandai status Terverifikasi.
-              </span>
             </div>
 
             {/* Modal Actions */}
@@ -757,6 +887,20 @@ export function MatchReviewView({
               >
                 Tutup
               </button>
+
+              {!inspectingCandidate && (
+                <button
+                  type="button"
+                  className="btn-link-secondary"
+                  onClick={() => {
+                    setInspectingTicket(null);
+                    openPicker(inspectingTicket);
+                  }}
+                >
+                  <Link2 size={14} />
+                  Cari Barang Temuan
+                </button>
+              )}
 
               {inspectingCandidate && (
                 <button
@@ -773,9 +917,117 @@ export function MatchReviewView({
                 type="button"
                 className="btn-confirm-match-gold"
                 onClick={() => handleConfirmVerification(inspectingTicket, inspectingCandidate)}
-                disabled={actionLoading}
+                disabled={actionLoading || !inspectingCandidate}
+                title={inspectingCandidate ? undefined : 'Belum ada pasangan — buat dulu lewat tombol Pasangkan'}
               >
                 {actionLoading ? 'Memproses...' : 'Tandai Terverifikasi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Picker: Create Pairing Manual */}
+      {pickerTicket && (
+        <div className="modal-backdrop" onClick={() => setPickerTicket(null)}>
+          <div
+            className="verification-modal-box pairing-picker-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="modal-top-bar">
+              <div className="modal-title-wrap">
+                <Link2 size={22} className="text-blue-600" />
+                <div>
+                  <h3 className="modal-heading">
+                    Pasangkan Barang Temuan: {pickerTicket.itemName}
+                  </h3>
+                  <span className="modal-sub-heading">
+                    {pickerTicket.id} • {pickerTicket.guestName}{' '}
+                    {pickerTicket.roomNumber ? `(Kamar ${pickerTicket.roomNumber})` : ''}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="modal-close-icon-btn"
+                onClick={() => setPickerTicket(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="pairing-picker-body">
+              <div className="pairing-picker-search">
+                <Search size={15} className="pairing-search-icon" />
+                <input
+                  type="text"
+                  className="pairing-search-input"
+                  placeholder="Cari barang temuan (nama atau nomor kamar)..."
+                  value={pickerSearch}
+                  onChange={(e) => setPickerSearch(e.target.value)}
+                />
+              </div>
+
+              {filteredPickerOptions.length === 0 ? (
+                <div className="pairing-picker-empty">
+                  <Package size={28} className="text-slate-400" />
+                  <p>
+                    Tidak ada barang temuan tersedia (status bukan 'baru' atau
+                    sudah terpasang di match lain).
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {!pickerSearch && pickerOptions.some((o) => o._suggest > 0) && (
+                    <>
+                      <div className="pairing-section-label">
+                        Disarankan (mirip kategori / kamar)
+                      </div>
+                      <div className="pairing-picker-list suggest">
+                        {pickerOptions
+                          .slice()
+                          .filter((o) => o._suggest > 0)
+                          .map((f) => (
+                            <PickerItem
+                              key={f._apiId}
+                              found={f}
+                              suggested
+                              onPick={() => handleCreatePairing(f)}
+                              loading={pickerLoading}
+                            />
+                          ))}
+                      </div>
+                    </>
+                  )}
+
+                  <div className="pairing-section-label">
+                    Semua barang temuan tersedia ({filteredPickerOptions.length})
+                  </div>
+                  <div className="pairing-picker-list">
+                    {filteredPickerOptions.map((f) => (
+                      <PickerItem
+                        key={f._apiId}
+                        found={f}
+                        suggested={f._suggest > 0}
+                        onPick={() => handleCreatePairing(f)}
+                        loading={pickerLoading}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="modal-actions-bar">
+              <button
+                type="button"
+                className="btn-cancel-modal"
+                onClick={() => setPickerTicket(null)}
+              >
+                Batal
               </button>
             </div>
           </div>

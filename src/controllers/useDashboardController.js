@@ -2,6 +2,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DashboardController } from './DashboardController';
 import ApiService from '../services/ApiService';
 import {
+  applyMatchDecision,
+  applyMatchDecisionLocal,
+} from '../services/matchSync';
+import { MatchReviewModel } from '../models/MatchReviewModel';
+import {
   normalizeReportStatus,
   isReportVerified,
   isReportResolved,
@@ -32,13 +37,14 @@ export function useDashboardController() {
   const [isQuickReportOpen, setIsQuickReportOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [apiReloadKey, setApiReloadKey] = useState(0);
 
   const showToast = useCallback((message, type = 'success') => {
     setToastNotification({ message, type });
     setTimeout(() => setToastNotification(null), 4000);
   }, []);
 
-  // ──── Fetch live API data on mount ────
+  // ──── Fetch live API data on mount & reload ────
   useEffect(() => {
     let cancelled = false;
 
@@ -54,10 +60,25 @@ export function useDashboardController() {
         }
 
         // Fetch reports from API
-        const allReports = await ApiService.getReports();
+        const [allReports, matchesData] = await Promise.all([
+          ApiService.getReports(),
+          ApiService.getMatches(),
+        ]);
         if (cancelled) return;
 
         if (Array.isArray(allReports) && allReports.length > 0) {
+          // Index match aktif (non-rejected) per laporan lost, + found report by id.
+          const matchList = Array.isArray(matchesData) ? matchesData : [];
+          const matchByLost = new Map();
+          matchList
+            .filter((m) => String(m.status || '').toLowerCase() !== 'rejected')
+            .forEach((m) => matchByLost.set(String(m.lost_report_id), m));
+          const foundById = new Map(
+            allReports
+              .filter((r) => r.type === 'found')
+              .map((f) => [String(f.id ?? f.ID), f])
+          );
+
           // Transform API reports to dashboard ticket format
           const apiTickets = allReports.map((r, idx) => {
             const isLost = r.type === 'lost';
@@ -68,8 +89,33 @@ export function useDashboardController() {
               ? new Date(r.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
               : '';
 
+            let candidate = null;
+            if (isLost) {
+              const pairMatch = matchByLost.get(String(r.id ?? r.ID));
+              if (pairMatch) {
+                const foundId = String(pairMatch.found_report_id ?? '');
+                const found = foundById.get(foundId) || null;
+                candidate = {
+                  id: `match-${pairMatch.id ?? pairMatch.ID}`,
+                  _apiId: pairMatch.id ?? pairMatch.ID,
+                  _source: 'api',
+                  lost_report_id: pairMatch.lost_report_id,
+                  found_report_id: foundId,
+                  name: found?.title || (foundId ? `Barang Temuan #${foundId}` : 'Barang Temuan'),
+                  category: found?.category || '',
+                  roomNumber: found?.room_number || '',
+                  locationFound: found?.location || '',
+                  finderName: found?.user?.name || '',
+                  foundAt: found?.created_at
+                    ? new Date(found.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+                    : '',
+                  matchStatus: pairMatch.status || 'pending',
+                };
+              }
+            }
+
             return {
-              id: `#RPT-${r.id || r.ID}`,
+              id: r.report_identifier || `#RPT-${r.id || r.ID}`,
               _apiId: r.id || r.ID,
               ticketNumber: `RPT-${r.id || r.ID}`,
               guestName: r.user?.name || (isLost ? 'Tamu' : 'Staf'),
@@ -85,6 +131,7 @@ export function useDashboardController() {
               priorityTag: null,
               type: r.type,
               description: r.description || '',
+              _candidate: candidate,
               _source: 'api',
             };
           });
@@ -174,14 +221,6 @@ export function useDashboardController() {
           }
         }
 
-        // Also fetch matches count
-        try {
-          const matches = await ApiService.getMatches();
-          if (!cancelled && Array.isArray(matches)) {
-            // Additional metrics update if matches exist
-          }
-        } catch {}
-
       } catch (err) {
         console.warn('[Dashboard] Failed to load API data:', err.message);
       }
@@ -190,7 +229,7 @@ export function useDashboardController() {
     loadApiData();
 
     return () => { cancelled = true; };
-  }, []);
+  }, [apiReloadKey]);
 
   const showToastCallback = showToast;
 
@@ -225,31 +264,53 @@ export function useDashboardController() {
   };
 
   const handleConfirmMatch = async (ticketId) => {
+    const ticket = tickets.find((t) => t.id === ticketId);
     setActionLoading(true);
-    const res = await DashboardController.verifyTicketMatch(ticketId);
-    setActionLoading(false);
-    if (res.success) {
-      setTickets((prev) =>
-        prev.map((t) =>
-          t.id === ticketId
-            ? { ...t, status: 'Terverifikasi', statusType: 'green' }
-            : t
-        )
-      );
-      setSelectedTicket(null);
-      showToastCallback(res.message, 'success');
-      // Update metrics
-      setMetrics((prev) => ({
-        ...prev,
-        pendingVerification: {
-          ...prev.pendingVerification,
-          value: Math.max(0, prev.pendingVerification.value - 1)
-        },
-        verifiedMonth: {
-          ...prev.verifiedMonth,
-          value: prev.verifiedMonth.value + 1
+    try {
+      if (ticket?._candidate) {
+        const user = ApiService.getCurrentUser();
+        const viaApi = await applyMatchDecision({
+          candidate: ticket._candidate,
+          nextStatus: 'approved',
+          extra: {
+            verified_by: user?.id ?? user?.ID ?? null,
+          },
+        });
+        if (!viaApi) {
+          throw new Error('Match tidak ditemukan di backend.');
         }
-      }));
+        showToastCallback(`Tiket ${ticket.id} berhasil diverifikasi (match disetujui).`, 'success');
+      } else if (ticket && !ticket._apiId) {
+        // Tiket lokal/offline: pakai kandidat lokal bila memang ada.
+        const localCandidates = MatchReviewModel.getCandidates(ticket.id);
+        const candidate = localCandidates[0] || null;
+        if (!candidate) {
+          showToastCallback(
+            'Belum ada pasangan untuk laporan ini. Buat pasangan di halaman Match Review terlebih dahulu.',
+            'info'
+          );
+          return;
+        }
+        await applyMatchDecisionLocal({
+          ticket,
+          candidate,
+          nextStatus: 'approved',
+          extra: {},
+        });
+        showToastCallback(`Tiket ${ticket.id} terverifikasi (mode lokal).`, 'success');
+      } else {
+        showToastCallback(
+          'Belum ada pasangan untuk laporan ini. Buat pasangan di halaman Match Review terlebih dahulu.',
+          'info'
+        );
+      }
+    } catch (err) {
+      console.warn('[Dashboard] confirm match gagal:', err.message);
+      showToastCallback(`Gagal memverifikasi: ${err.message}`, 'info');
+    } finally {
+      setActionLoading(false);
+      setSelectedTicket(null);
+      setApiReloadKey((prev) => prev + 1);
     }
   };
 

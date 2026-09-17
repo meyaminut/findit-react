@@ -29,6 +29,31 @@ import {
 } from '../../services/reportStatus';
 import './AllReportsView.css';
 
+// Backend melayani file foto di path /uploads relatif terhadap host (nginx
+// strip /findit). API base dibaca dari env; potong suffix /api untuk akar host.
+const resolveMediaUrl = (url) => {
+  if (!url) return '';
+  if (/^(https?:)?\/\//i.test(url)) return url;
+  if (/^data:/i.test(url)) return url;
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+  const base = envUrl.replace(/\/api\/?/i, '');
+  if (!base) return url;
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`;
+};
+
+// Gabungkan lokasi teks + nomor kamar tanpa menyebut kamar dua kali.
+// Contoh: ("Kamar", "101") -> "Kamar 101"; ("Di Meja Nakas", "016") ->
+// "Di Meja Nakas (Kamar 016)"; ("Kamar 101", "101") -> "Kamar 101".
+const formatReportLocation = (location, roomNumber) => {
+  const loc = (location || '').trim();
+  const room = (roomNumber || '').toString().trim();
+  if (!loc) return room ? `Kamar ${room}` : '-';
+  if (!room) return loc;
+  if (loc.includes(room)) return loc;
+  if (/^kamar$/i.test(loc)) return `Kamar ${room}`;
+  return `${loc} (Kamar ${room})`;
+};
+
 /**
  * View Component: AllReportsView (Screen: Barang Temuan & Master Reports)
  * Faithfully matches the user's reference UI:
@@ -53,6 +78,16 @@ export function AllReportsView({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedReport, setSelectedReport] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
+  const [brokenPhotos, setBrokenPhotos] = useState(() => new Set());
+
+  const handlePhotoError = (url) => {
+    setBrokenPhotos((prev) => {
+      if (prev.has(url)) return prev;
+      const next = new Set(prev);
+      next.add(url);
+      return next;
+    });
+  };
 
   const refreshData = () => {
     setFoundItems(StorageService.getFoundItems());
@@ -84,21 +119,20 @@ export function AllReportsView({
               : '';
 
             return {
-              id: `RPT-${r.id || r.ID}`,
+              id: r.report_identifier || `RPT-${r.id || r.ID}`,
               _apiId: r.id || r.ID,
               rawId: `RPT-${r.id || r.ID}`,
               title: r.title || 'Barang',
               type: r.type || 'found',
               typeLabel: isLost ? 'LOST' : 'FOUND',
               category: r.category || 'Lainnya',
-              photoUrl: r.photo_url || null,
+              photoUrl: resolveMediaUrl(r.photo_url || ''),
               reporter: {
                 name: r.user?.name || (isLost ? 'Tamu' : 'Staf Hotel'),
                 badge: isLost ? 'Tamu' : 'Staf HK',
                 contact: r.room_number ? `Kamar ${r.room_number}` : (r.location || '-')
               },
-              location: r.location ? `${r.location}${r.room_number && !r.location.includes(r.room_number) ? ` (Kamar ${r.room_number})` : ''}` : (r.room_number ? `Kamar ${r.room_number}` : '-'),
-              storageLocation: isLost ? 'Klaim Pelapor' : 'Brankas FO',
+              location: formatReportLocation(r.location, r.room_number),
               timestamp: `${dateStr}, ${timeStr} WIB`,
               createdAt: r.created_at || new Date().toISOString(),
               status: mapApiStatusToDisplay(r.status, r.type),
@@ -140,14 +174,13 @@ export function AllReportsView({
         type: 'found',
         typeLabel: 'FOUND',
         category: item.category || 'General',
-        photoUrl: item.photoUrl,
+        photoUrl: resolveMediaUrl(item.photoUrl || ''),
         reporter: {
           name: item.finderName || 'Housekeeping Staff',
           badge: 'Staff HK',
           contact: item.roomNumber ? `Kamar ${item.roomNumber}` : 'Housekeeping Dept'
         },
-        location: item.locationFound || `Kamar ${item.roomNumber || '-'}`,
-        storageLocation: item.storageLocation || 'Brankas FO',
+        location: formatReportLocation(item.locationFound, item.roomNumber),
         timestamp: item.foundAt || 'Hari ini',
         createdAt: item.createdAt || Date.now(),
         status: item.status || 'Di Brankas FO',
@@ -171,8 +204,7 @@ export function AllReportsView({
           badge: ticket.priority === 'VIP' ? 'VIP Guest' : 'Tamu Reservasi',
           contact: ticket.roomNumber ? `Kamar ${ticket.roomNumber}` : (ticket.phone || '-')
         },
-        location: ticket.locationLost || `Kamar ${ticket.roomNumber || '-'}`,
-        storageLocation: 'Klaim Pelapor',
+        location: formatReportLocation(ticket.locationLost, ticket.roomNumber),
         timestamp: ticket.reportedAt || 'Hari ini',
         createdAt: ticket.createdAt || Date.now(),
         status: ticket.status || 'Menunggu Verifikasi',
@@ -496,11 +528,12 @@ export function AllReportsView({
                         <td>
                           <div className="col-item-ref">
                             <div className="item-thumbnail-wrap">
-                              {report.photoUrl ? (
+                              {report.photoUrl && !brokenPhotos.has(report.photoUrl) ? (
                                 <img
                                   src={report.photoUrl}
                                   alt={report.title}
                                   className="item-thumbnail-img"
+                                  onError={() => handlePhotoError(report.photoUrl)}
                                 />
                               ) : (
                                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#94a3b8' }}>
@@ -640,9 +673,13 @@ export function AllReportsView({
             </div>
 
             <div style={{ padding: '20px 24px' }}>
-              {selectedReport.photoUrl && (
+              {selectedReport.photoUrl && !brokenPhotos.has(selectedReport.photoUrl) && (
                 <div className="modal-detail-photo">
-                  <img src={selectedReport.photoUrl} alt={selectedReport.title} />
+                  <img
+                    src={selectedReport.photoUrl}
+                    alt={selectedReport.title}
+                    onError={() => handlePhotoError(selectedReport.photoUrl)}
+                  />
                 </div>
               )}
 
@@ -684,8 +721,8 @@ export function AllReportsView({
                   </span>
                 </div>
                 <div className="modal-spec-item">
-                  <span className="spec-label">Lokasi Simpan / Deskripsi</span>
-                  <span className="spec-val">{selectedReport.storageLocation || '-'}</span>
+                  <span className="spec-label">Aktivitas Terbaru</span>
+                  <span className="spec-val">{selectedReport.activityNote || 'Belum ada aktivitas tercatat'}</span>
                 </div>
               </div>
             </div>
