@@ -23,6 +23,25 @@ export default function UserDashboard() {
   const [listModal, setListModal] = useState(null);
   const [reports, setReports] = useState([]);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [notifSnapshot, setNotifSnapshot] = useState(null);
+
+  const NOTIF_SEEN_KEY = 'findit_user_notif_seen';
+  const [seenStatus, setSeenStatus] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(NOTIF_SEEN_KEY) || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const persistSeenStatus = (map) => {
+    try {
+      localStorage.setItem(NOTIF_SEEN_KEY, JSON.stringify(map));
+    } catch {
+      // localStorage tidak tersedia; abaikan
+    }
+    setSeenStatus(map);
+  };
 
   useEffect(() => {
     let active = true;
@@ -48,6 +67,61 @@ export default function UserDashboard() {
       .filter((r) => Number(r.user_id) === uid)
       .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
   }, [reports, currentUser]);
+
+  const notifications = useMemo(() => {
+    return myReports
+      .filter((r) => r && r.title)
+      .map((r) => {
+        const st = normalizeReportStatus(r.status);
+        const rid = String(r.id ?? '');
+        let title;
+        let desc;
+        if (st === 'dikembalikan') {
+          title = `Barang ${r.title} telah diserahkan`;
+          desc = 'Barang sudah diambil/diserahkan. Terima kasih atas laporannya.';
+        } else if (st === 'dikonfirmasi') {
+          title = `Barang ${r.title} telah diverifikasi admin`;
+          desc = 'Admin mengonfirmasi kecocokan. Silakan ambil di Front Desk.';
+        } else if (st === 'dicocokkan') {
+          title = `Barang ${r.title} menemukan kecocokan`;
+          desc = 'Laporan dicocokkan dengan barang temuan. Menunggu verifikasi admin.';
+        } else if (st === 'rejected') {
+          title = `Laporan ${r.title} tidak dapat diverifikasi`;
+          desc = 'Tim verifikasi tidak menemukan kecocokan. Hubungi Front Desk bila perlu.';
+        } else {
+          title = `Laporan ${r.title} sedang diproses`;
+          desc = 'Barang sedang dicari; menunggu verifikasi admin.';
+        }
+        const isNew = !Object.prototype.hasOwnProperty.call(seenStatus, rid) || seenStatus[rid] !== st;
+        return {
+          rid,
+          title,
+          desc,
+          isNew,
+          time: r.updated_at || r.created_at,
+          statusLabel: reportStatusLabel(r.status),
+          statusType: reportStatusType(r.status),
+        };
+      })
+      .sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
+  }, [myReports, seenStatus]);
+
+  const openNotif = () => {
+    setNotifSnapshot(notifications);
+    const next = {};
+    notifications.forEach((n) => {
+      next[n.rid] = normalizeReportStatus(
+        myReports.find((r) => String(r.id ?? '') === n.rid)?.status
+      );
+    });
+    persistSeenStatus(next);
+    setIsNotifOpen(true);
+  };
+
+  const closeNotif = () => {
+    setNotifSnapshot(null);
+    setIsNotifOpen(false);
+  };
 
   const activeReports = useMemo(
     () => myReports.filter((r) => normalizeReportStatus(r.status) !== 'dikembalikan'),
@@ -106,13 +180,13 @@ export default function UserDashboard() {
           </button>
 
           {/* Notifikasi Update */}
-          <button type="button" className="ud-card" onClick={() => setIsNotifOpen(true)}>
+          <button type="button" className="ud-card" onClick={openNotif}>
             <span className="ud-card-icon">
               <Bell size={22} />
             </span>
             <div>
               <div className="ud-card-title">Notifikasi Update</div>
-              <div className="ud-card-sub">Kabar terbaru via WhatsApp &amp; email.</div>
+              <div className="ud-card-sub">Kabar terbaru status laporan Anda.</div>
             </div>
           </button>
 
@@ -198,7 +272,7 @@ export default function UserDashboard() {
         {isNotifOpen && (
           <div
             className="ud-modal-backdrop"
-            onClick={() => setIsNotifOpen(false)}
+            onClick={closeNotif}
             role="presentation"
           >
             <div
@@ -216,18 +290,37 @@ export default function UserDashboard() {
                 <button
                   type="button"
                   className="ud-modal-close"
-                  onClick={() => setIsNotifOpen(false)}
+                  onClick={closeNotif}
                   aria-label="Tutup"
                 >
                   <X size={18} />
                 </button>
               </div>
               <div className="ud-modal-body">
-                <Bell size={30} strokeWidth={1.5} className="ud-modal-empty-icon" />
-                <p className="ud-modal-empty">Belum ada notifikasi baru.</p>
-                <p className="ud-modal-empty-sub">
-                  Kabar terbaru status laporan Anda akan muncul di sini.
-                </p>
+                {!notifSnapshot || notifSnapshot.length === 0 ? (
+                  <>
+                    <Bell size={30} strokeWidth={1.5} className="ud-modal-empty-icon" />
+                    <p className="ud-modal-empty">Belum ada notifikasi baru.</p>
+                    <p className="ud-modal-empty-sub">
+                      Kabar terbaru status laporan Anda akan muncul di sini.
+                    </p>
+                  </>
+                ) : (
+                  <ul className="ud-notif-list">
+                    {notifSnapshot.map((n) => (
+                      <li key={n.rid} className={`ud-notif-row ud-notif-${n.statusType}`}>
+                        <div className="ud-notif-title-row">
+                          <span className="ud-notif-title">{n.title}</span>
+                          {n.isNew && <span className="ud-notif-badge">Baru</span>}
+                        </div>
+                        <span className="ud-notif-desc">{n.desc}</span>
+                        <span className="ud-notif-status">
+                          Status: {n.statusLabel}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           </div>

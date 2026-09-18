@@ -93,11 +93,12 @@ const syncReportStatus = async (reportId, status) => {
 export const markMatchHandedOver = async ({ ticket }) => {
   const reportStatus = 'dikembalikan';
   if (ticket?._apiId == null) return false;
-  await syncReportStatus(ticket._apiId, reportStatus);
+  const jobs = [syncReportStatus(ticket._apiId, reportStatus)];
   const foundId = ticket?._candidate?.found_report_id;
   if (foundId != null) {
-    await syncReportStatus(foundId, reportStatus);
+    jobs.push(syncReportStatus(foundId, reportStatus));
   }
+  await Promise.all(jobs);
   return true;
 };
 
@@ -111,15 +112,16 @@ export const applyMatchDecision = async ({ candidate, nextStatus, extra = {}, ma
   if (!target) return false;
 
   const matchId = target.id ?? target.ID;
-  await ApiService.updateMatchStatus(
-    matchId,
-    nextStatus,
-    buildMatchUpdatePayload(target, nextStatus, extra)
-  );
-
   const reportStatus = reportStatusForMatch(nextStatus);
-  await syncReportStatus(target.lost_report_id, reportStatus);
-  await syncReportStatus(target.found_report_id, reportStatus);
+  await Promise.all([
+    ApiService.updateMatchStatus(
+      matchId,
+      nextStatus,
+      buildMatchUpdatePayload(target, nextStatus, extra)
+    ),
+    syncReportStatus(target.lost_report_id, reportStatus),
+    syncReportStatus(target.found_report_id, reportStatus),
+  ]);
   return true;
 };
 

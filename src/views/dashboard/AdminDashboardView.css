@@ -1730,3 +1730,137 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   11. WhatsApp Notification Preview Modal
+   ========================================================================== */
+.wa-title-icon {
+  color: #16a34a;
+}
+
+.wa-preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wa-preview-recipient {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.wa-preview-event-badge {
+  display: inline-block;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 7px;
+}
+
+.wa-preview-recipient-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #14532d;
+}
+
+.wa-preview-recipient-phone {
+  font-size: 13px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.wa-preview-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.wa-preview-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 11px;
+}
+
+.wa-preview-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.wa-preview-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.wa-preview-textarea-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.wa-preview-textarea {
+  width: 100%;
+  resize: vertical;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #0f172a;
+  font-family: inherit;
+  outline: none;
+}
+
+.wa-preview-textarea:focus {
+  background: #ffffff;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+.wa-preview-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.btn-send-wa {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px;
+  background: #16a34a;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-send-wa:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.btn-send-wa:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

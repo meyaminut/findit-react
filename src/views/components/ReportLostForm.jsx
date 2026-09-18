@@ -65,13 +65,18 @@ const userReportApi = {
  *          default = userReportApi (portal).
  *   - onSuccess(result): dipanggil dengan hasil createReport setelah reset.
  *   - checkAuth (default true): tampilkan banner auth bila tidak ada sesi.
- *   - submitLabel: override label tombol submit (selain label loading otomatis).
- *   - footerNote: override catatan footer kepercayaan.
+*  - showPhoto (default true): tampilkan fitur unggah foto.
+ *  - allowCamera (default true): aktifkan tombol/tag "kamera". Saat false,
+ *    unggah foto hanya via "Pilih dari Galeri / File" (user portal).
+ *  - submitLabel: override label tombol submit (selain label loading otomatis).
+ *  - footerNote: override catatan footer kepercayaan.
  */
 export function ReportLostForm({
   api = userReportApi,
   onSuccess,
   checkAuth = true,
+  showPhoto = true,
+  allowCamera = true,
   submitLabel,
   footerNote,
 }) {
@@ -189,8 +194,8 @@ export function ReportLostForm({
     setIsSubmitting(true);
     const photoUrls = [];
 
-    // STEP 1: upload foto (jika ada)
-    if (photos.length > 0) {
+    // STEP 1: upload foto (jika fitur foto aktif & ada lampiran)
+    if (showPhoto && photos.length > 0) {
       setSubmitStage('uploading');
       try {
         for (const photo of photos) {
@@ -221,7 +226,7 @@ export function ReportLostForm({
         room_number: roomNumber.trim(),
         location,
         features,
-        photo_url: photoUrls.filter(Boolean).join(','),
+        photo_url: showPhoto ? photoUrls.filter(Boolean).join(',') : '',
       });
       if (result?.status === 'success') {
         resetForm();
@@ -310,21 +315,24 @@ export function ReportLostForm({
         </div>
 
         {/* Upload Foto */}
+        {showPhoto && (
         <div className="gr-field gr-field-upload">
           <span className="gr-label">Unggah Foto Barang (Jika Ada)</span>
 
           {/* Hidden inputs: kamera & galeri */}
-          <input
-            ref={inputCameraRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="gr-file-input"
-            onChange={(e) => {
-              handleCameraFiles(e.target.files);
-              e.target.value = '';
-            }}
-          />
+          {allowCamera && (
+            <input
+              ref={inputCameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="gr-file-input"
+              onChange={(e) => {
+                handleCameraFiles(e.target.files);
+                e.target.value = '';
+              }}
+            />
+          )}
           <input
             ref={inputGalleryRef}
             type="file"
@@ -345,14 +353,16 @@ export function ReportLostForm({
               <span className="gr-upload-text">Tambahkan foto barang Anda</span>
               <span className="gr-upload-sub">Membantu petugas mengenali barang lebih cepat</span>
               <div className="gr-upload-actions">
-                <button
-                  type="button"
-                  className="gr-upload-btn gr-upload-camera"
-                  onClick={() => inputCameraRef.current && inputCameraRef.current.click()}
-                >
-                  <Camera size={17} />
-                  Ambil Foto (Kamera)
-                </button>
+                {allowCamera && (
+                  <button
+                    type="button"
+                    className="gr-upload-btn gr-upload-camera"
+                    onClick={() => inputCameraRef.current && inputCameraRef.current.click()}
+                  >
+                    <Camera size={17} />
+                    Ambil Foto (Kamera)
+                  </button>
+                )}
                 <button
                   type="button"
                   className="gr-upload-btn gr-upload-gallery"
@@ -387,7 +397,13 @@ export function ReportLostForm({
                 <button
                   type="button"
                   className="gr-upload-btn gr-upload-camera"
-                  onClick={() => inputCameraRef.current && inputCameraRef.current.click()}
+                  onClick={() => {
+                    if (allowCamera) {
+                      inputCameraRef.current && inputCameraRef.current.click();
+                    } else {
+                      inputGalleryRef.current && inputGalleryRef.current.click();
+                    }
+                  }}
                 >
                   <RefreshCw size={16} />
                   Ganti Foto
@@ -410,6 +426,7 @@ export function ReportLostForm({
             <span className="gr-error-text">{photoError}</span>
           )}
         </div>
+        )}
 
         {/* Deskripsi Barang */}
         <div className="gr-field">

@@ -33,11 +33,26 @@ const getAuthToken = () => {
 
 /**
  * Core request dispatcher with interceptor logic
+ * Dilengkapi timeout (AbortController) agar request yang macet tidak
+ * menggantung UI — dipakai halaman verifikasi/dashboard.
  */
+const REQUEST_TIMEOUT_MS = 25000;
+
 async function request(endpoint, options = {}) {
   const baseUrl = getBaseUrl();
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${baseUrl}${cleanEndpoint}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const externalSignal = options.signal;
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else if (externalSignal.addEventListener) {
+      externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+  }
 
   const token = getAuthToken();
 
@@ -58,6 +73,7 @@ async function request(endpoint, options = {}) {
   const config = {
     ...options,
     headers,
+    signal: controller.signal,
     body: isFormData
       ? options.body
       : typeof options.body === 'object' && options.body !== null
@@ -88,11 +104,17 @@ async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    if (!error.status) {
+    if (controller.signal.aborted) {
+      error.status = 0;
+      error.isNetworkError = true;
+      error.timeout = true;
+    } else if (!error.status) {
       error.status = 0;
       error.isNetworkError = true;
     }
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

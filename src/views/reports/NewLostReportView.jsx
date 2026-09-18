@@ -67,6 +67,7 @@ export function NewLostReportView({ activeNav = 'Laporan', onNavChange, onLogout
             <ReportLostForm
               api={adminReportApi}
               checkAuth={false}
+              showPhoto={false}
               onSuccess={() => handleSaved()}
               submitLabel="Simpan Laporan"
               footerNote="Laporan langsung didaftarkan ke arsip Laporan & antrean Verifikasi."

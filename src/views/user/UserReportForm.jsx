@@ -42,8 +42,9 @@ export default function UserReportForm() {
             </div>
           </section>
 
-          {/* Shared Lost-Item Report Form */}
+          {/* Shared Lost-Item Report Form (foto via galeri, tanpa kamera) */}
           <ReportLostForm
+            allowCamera={false}
             onSuccess={(result) => {
               navigate('/user/confirmation', { state: { report: result.data } });
             }}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { DashboardController } from './DashboardController';
 import ApiService from '../services/ApiService';
 import {
@@ -8,12 +8,19 @@ import {
 } from '../services/matchSync';
 import { MatchReviewModel } from '../models/MatchReviewModel';
 import {
-  normalizeReportStatus,
+  isReportAwaiting,
   isReportVerified,
   isReportResolved,
   reportStatusLabel,
   reportStatusType,
 } from '../services/reportStatus';
+import {
+  normalizePhone,
+  buildWhatsAppUrl,
+  buildNotificationMessage,
+  notifEventLabel,
+  WHATSAPP_EVENTS,
+} from '../services/whatsapp';
 
 /**
  * Controller Hook: useDashboardController
@@ -35,9 +42,34 @@ export function useDashboardController() {
   // Modals & UI States
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isQuickReportOpen, setIsQuickReportOpen] = useState(false);
+  const [waPreview, setWaPreview] = useState(null);
+  const [waPreviewLoading, setWaPreviewLoading] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [apiReloadKey, setApiReloadKey] = useState(0);
+  const matchesRef = useRef(null);
+  const reportsRef = useRef([]);
+
+  const applyMetrics = useCallback((reports) => {
+    setMetrics(buildDashboardMetrics(reports));
+  }, []);
+
+  const patchReportStatuses = useCallback(
+    (reportIds, status) => {
+      const ids = new Set(
+        (Array.isArray(reportIds) ? reportIds : [])
+          .filter((v) => v != null && v !== '')
+          .map((v) => String(v).replace(/\D/g, ''))
+      );
+      if (ids.size === 0) return;
+      const list = reportsRef.current.map((r) =>
+        ids.has(String(r.id ?? r.ID).replace(/\D/g, '')) ? { ...r, status } : r
+      );
+      reportsRef.current = list;
+      applyMetrics(list);
+    },
+    [applyMetrics]
+  );
 
   const showToast = useCallback((message, type = 'success') => {
     setToastNotification({ message, type });
@@ -50,21 +82,24 @@ export function useDashboardController() {
 
     async function loadApiData() {
       try {
-        const healthResult = await ApiService.checkHealth();
-        if (cancelled) return;
-        setApiOnline(healthResult.online);
-
-        if (!healthResult.online) {
-          console.info('[Dashboard] API offline, using local data');
-          return;
-        }
-
-        // Fetch reports from API
-        const [allReports, matchesData] = await Promise.all([
+        // Health dijalankan paralel dengan data agar tidak menambah latensi.
+        const [healthResult, allReports, matchesData] = await Promise.all([
+          ApiService.checkHealth(),
           ApiService.getReports(),
           ApiService.getMatches(),
         ]);
         if (cancelled) return;
+        setApiOnline(Boolean(healthResult?.online));
+
+        if (!healthResult?.online) {
+          console.info('[Dashboard] API offline, using local data');
+          return;
+        }
+        if (allReports == null) return;
+
+        matchesRef.current = Array.isArray(matchesData) ? matchesData : [];
+        reportsRef.current = Array.isArray(allReports) ? allReports : [];
+        applyMetrics(reportsRef.current);
 
         if (Array.isArray(allReports) && allReports.length > 0) {
           // Index match aktif (non-rejected) per laporan lost, + found report by id.
@@ -117,6 +152,7 @@ export function useDashboardController() {
             return {
               id: r.report_identifier || `#RPT-${r.id || r.ID}`,
               _apiId: r.id || r.ID,
+              _userId: r.user_id ?? r.userId ?? null,
               ticketNumber: `RPT-${r.id || r.ID}`,
               guestName: r.user?.name || r.guest_name || r.name || (isLost ? 'Tamu' : 'Staf'),
               isVip: false,
@@ -144,45 +180,6 @@ export function useDashboardController() {
             // Merge: API data first, then any local-only data
             const localOnly = prev.filter(t => t._source !== 'api');
             return [...apiTickets, ...localOnly];
-          });
-
-          // Update KPI metrics from live data
-          const foundReports = allReports.filter(r => r.type === 'found');
-          const pending = allReports.filter(r => normalizeReportStatus(r.status) === 'baru');
-          const verified = allReports.filter(r => isReportVerified(r.status));
-          const completed = allReports.filter(r => isReportResolved(r.status));
-
-          setMetrics({
-            totalFound: {
-              value: foundReports.length,
-              unit: 'Item',
-              label: 'Total Barang Temuan (Bulan Ini)',
-              trendText: `+${foundReports.length} dari API`,
-              trendType: 'up'
-            },
-            pendingVerification: {
-              value: pending.length,
-              unit: 'Barang',
-              label: 'Barang Menunggu Verifikasi',
-              badge: pending.length > 0 ? 'Butuh Tindakan Segera' : '',
-              alertText: pending.length > 2 ? `${pending.length} barang menunggu` : '',
-              isHighlighted: pending.length > 0
-            },
-            verifiedMonth: {
-              value: verified.length,
-              unit: 'Item',
-              label: 'Terverifikasi Bulan Ini',
-              statusText: 'Terkonfirmasi Valid'
-            },
-            resolvedHandover: {
-              value: completed.length,
-              unit: 'Dikembalikan',
-              label: 'Resolved / Selesai Handover',
-              successRate: allReports.length > 0
-                ? `${Math.round((completed.length / allReports.length) * 100)}% Rate Sukses`
-                : '0% Rate Sukses',
-              targetText: 'Target: 80%'
-            }
           });
 
           // Update category stats from API data
@@ -233,7 +230,7 @@ export function useDashboardController() {
     loadApiData();
 
     return () => { cancelled = true; };
-  }, [apiReloadKey]);
+  }, [apiReloadKey, applyMetrics]);
 
   const showToastCallback = showToast;
 
@@ -267,6 +264,68 @@ export function useDashboardController() {
     setSelectedTicket(null);
   };
 
+  // ──── WhatsApp notification (semi-otomatis via deep link wa.me) ────
+  const openWhatsAppPreview = async (ticket, event) => {
+    if (!ticket) return;
+    if (ticket.type !== 'lost') {
+      showToastCallback('Notifikasi WhatsApp hanya untuk laporan tamu (barang hilang).', 'info');
+      return;
+    }
+    if (!ticket._userId) {
+      showToastCallback('Data tamu tidak tersedia, notifikasi WhatsApp dilewati.', 'info');
+      return;
+    }
+
+    setWaPreviewLoading(true);
+    try {
+      const user = await ApiService.getUserById(ticket._userId);
+      const phone = normalizePhone(user?.phone);
+      const guestName = user?.name || ticket.guestName;
+      if (!phone) {
+        showToastCallback(`Nomor WhatsApp ${guestName} belum tersedia.`, 'info');
+        return;
+      }
+      setWaPreview({
+        event,
+        eventLabel: notifEventLabel(event),
+        phone,
+        guestName,
+        itemTitle: ticket.itemTitle,
+        room: ticket.room,
+        message: buildNotificationMessage({
+          event,
+          guestName,
+          itemTitle: ticket.itemTitle,
+          room: ticket.room,
+        }),
+      });
+    } catch (err) {
+      showToastCallback(`Gagal menyiapkan notifikasi WhatsApp: ${err.message}`, 'info');
+    } finally {
+      setWaPreviewLoading(false);
+    }
+  };
+
+  const handleCloseWhatsAppPreview = () => setWaPreview(null);
+
+  const handleWhatsAppMessageChange = (text) =>
+    setWaPreview((prev) => (prev ? { ...prev, message: text } : prev));
+
+  const handleConfirmWhatsAppSend = () => {
+    if (!waPreview) return;
+    const url = buildWhatsAppUrl(waPreview.phone, waPreview.message);
+    if (!url) {
+      showToastCallback('Nomor WhatsApp tidak valid.', 'info');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+    showToastCallback(
+      `Membuka WhatsApp untuk ${waPreview.guestName} (${waPreview.phone}).`,
+      'success'
+    );
+    setWaPreview(null);
+  };
+
   const handleConfirmMatch = async (ticketId) => {
     const ticket = tickets.find((t) => t.id === ticketId);
     setActionLoading(true);
@@ -279,11 +338,26 @@ export function useDashboardController() {
           extra: {
             verified_by: user?.id ?? user?.ID ?? null,
           },
+          matches: matchesRef.current,
         });
         if (!viaApi) {
           throw new Error('Match tidak ditemukan di backend.');
         }
+        setTickets((prev) =>
+          prev.map((t) =>
+            t.id === ticket.id
+              ? {
+                  ...t,
+                  status: 'Terverifikasi',
+                  statusType: 'green',
+                  _candidate: { ...(t._candidate || {}), matchStatus: 'approved' },
+                }
+              : t
+          )
+        );
         showToastCallback(`Tiket ${ticket.id} berhasil diverifikasi (match disetujui).`, 'success');
+        patchReportStatuses([ticket._apiId, ticket._candidate?.found_report_id], 'dikonfirmasi');
+        void openWhatsAppPreview(ticket, WHATSAPP_EVENTS.VERIFIED);
       } else if (ticket && !ticket._apiId) {
         // Tiket lokal/offline: pakai kandidat lokal bila memang ada.
         const localCandidates = MatchReviewModel.getCandidates(ticket.id);
@@ -348,21 +422,9 @@ export function useDashboardController() {
           t.id === ticket.id ? { ...t, status: 'Diserahkan', statusType: 'blue' } : t
         )
       );
-      setMetrics((prev) => {
-        if (!prev?.resolvedHandover) return prev;
-        const count = (prev.resolvedHandover.value ?? 0) + 1;
-        const total = prev.totalFound?.value ?? count;
-        return {
-          ...prev,
-          resolvedHandover: {
-            ...prev.resolvedHandover,
-            value: count,
-            unit: 'Dikembalikan',
-            successRate:
-              total > 0 ? `${Math.round((count / total) * 100)}% Rate Sukses` : '0% Rate Sukses',
-          },
-        };
-      });
+      if (viaApi) {
+        patchReportStatuses([ticket._apiId, ticket._candidate?.found_report_id], 'dikembalikan');
+      }
       showToastCallback(
         viaApi
           ? `Barang ${ticket.id} berhasil ditandai Diserahkan.`
@@ -406,6 +468,10 @@ export function useDashboardController() {
     };
 
     setTickets((prev) => [newTicket, ...prev.filter((t) => t._source !== 'api')]);
+    if (report && (report.id != null || report.ID != null)) {
+      reportsRef.current = [report, ...reportsRef.current];
+      applyMetrics(reportsRef.current);
+    }
     setApiReloadKey((prev) => prev + 1);
     showToastCallback('Laporan kehilangan berhasil dibuat & masuk ke antrean Verifikasi.', 'success');
   };
@@ -425,6 +491,11 @@ export function useDashboardController() {
     selectedTicket,
     isQuickReportOpen,
     setIsQuickReportOpen,
+    waPreview,
+    waPreviewLoading,
+    handleCloseWhatsAppPreview,
+    handleWhatsAppMessageChange,
+    handleConfirmWhatsAppSend,
     toastNotification,
     actionLoading,
     apiOnline,
@@ -445,6 +516,66 @@ function mapApiStatus(status, type = 'lost') {
 
 function mapApiStatusType(status) {
   return reportStatusType(status);
+}
+
+/**
+ * Hitung KPI card "Dashboard Operasional" dari daftar report API.
+ * Konsisten terhadap label masing-masing card:
+ *  - Total Barang Temuan (Bulan Ini): report found dengan created_at bulan berjalan.
+ *  - Barang Menunggu Verifikasi: semua report berstatus 'baru' ATAU 'dicocokkan'.
+ *  - Terverifikasi Bulan Ini: report 'dikonfirmasi' yang diperbarui bulan berjalan.
+ *  - Resolved / Selesai Handover: semua report 'dikembalikan' + rate sukses.
+ */
+function buildDashboardMetrics(reports = []) {
+  const list = Array.isArray(reports) ? reports : [];
+
+  const now = new Date();
+  const inThisMonth = (value) => {
+    if (!value) return false;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return false;
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  };
+
+  const foundAll = list.filter((r) => r.type === 'found');
+  const foundThisMonth = foundAll.filter((r) => inThisMonth(r.created_at));
+  const pending = list.filter((r) => isReportAwaiting(r.status));
+  const verifiedThisMonth = list.filter(
+    (r) => isReportVerified(r.status) && inThisMonth(r.updated_at || r.created_at)
+  );
+  const completed = list.filter((r) => isReportResolved(r.status));
+  const successRate = list.length > 0 ? Math.round((completed.length / list.length) * 100) : 0;
+
+  return {
+    totalFound: {
+      value: foundThisMonth.length,
+      unit: 'Item',
+      label: 'Total Barang Temuan (Bulan Ini)',
+      trendText: `+${foundAll.length} total dari API`,
+      trendType: 'up',
+    },
+    pendingVerification: {
+      value: pending.length,
+      unit: 'Barang',
+      label: 'Barang Menunggu Verifikasi',
+      badge: pending.length > 0 ? 'Butuh Tindakan Segera' : '',
+      alertText: pending.length > 2 ? `${pending.length} barang menunggu` : '',
+      isHighlighted: pending.length > 0,
+    },
+    verifiedMonth: {
+      value: verifiedThisMonth.length,
+      unit: 'Item',
+      label: 'Terverifikasi Bulan Ini',
+      statusText: 'Terkonfirmasi Valid',
+    },
+    resolvedHandover: {
+      value: completed.length,
+      unit: 'Dikembalikan',
+      label: 'Resolved / Selesai Handover',
+      successRate: `${successRate}% Rate Sukses`,
+      targetText: 'Target: 80%',
+    },
+  };
 }
 
 export default useDashboardController;

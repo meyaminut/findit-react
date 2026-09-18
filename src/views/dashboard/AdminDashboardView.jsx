@@ -8,6 +8,7 @@ import LiveActivityWidget from './components/LiveActivityWidget';
 import CategoryStatsWidget from './components/CategoryStatsWidget';
 import QuickReportModal from './components/QuickReportModal';
 import MatchVerificationModal from './components/MatchVerificationModal';
+import WhatsAppPreviewModal from './components/WhatsAppPreviewModal';
 import './AdminDashboardView.css';
 
 /**
@@ -31,6 +32,11 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
     selectedTicket,
     isQuickReportOpen,
     setIsQuickReportOpen,
+    waPreview,
+    waPreviewLoading,
+    handleCloseWhatsAppPreview,
+    handleWhatsAppMessageChange,
+    handleConfirmWhatsAppSend,
     toastNotification,
     actionLoading,
     apiOnline,
@@ -147,6 +153,15 @@ export function AdminDashboardView({ onLogout, onNavChange }) {
         onClose={handleCloseMatchModal}
         onConfirmMatch={handleConfirmMatch}
         isLoading={actionLoading}
+      />
+
+      {/* Modal: WhatsApp Notification Preview */}
+      <WhatsAppPreviewModal
+        preview={waPreview}
+        isLoading={waPreviewLoading}
+        onClose={handleCloseWhatsAppPreview}
+        onMessageChange={handleWhatsAppMessageChange}
+        onSend={handleConfirmWhatsAppSend}
       />
 
       {/* Interactive Toast Notifications */}

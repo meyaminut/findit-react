@@ -34,7 +34,9 @@ export async function login(email, password) {
     // Store user info
     try {
       localStorage.setItem('findit_user', JSON.stringify(data.data.user || data.data));
-    } catch {}
+    } catch {
+      // localStorage tidak tersedia; abaikan
+    }
   }
   return data;
 }
@@ -50,7 +52,9 @@ export function logout() {
   apiClient.clearToken();
   try {
     localStorage.removeItem('findit_user');
-  } catch {}
+  } catch {
+    // localStorage tidak tersedia; abaikan
+  }
 }
 
 export function getCurrentUser() {
@@ -76,6 +80,23 @@ export function getToken() {
 
 export function isAuthenticated() {
   return !!getToken();
+}
+
+// ──────────────────────────── USERS ────────────────────────────
+/**
+ * Ambil data user (termasuk `phone`) berdasarkan id.
+ * Dipakai untuk notifikasi WhatsApp: GET /reports hanya mengembalikan
+ * `user_id`, sedangkan nomor tamu hanya tersedia di /users/{id}.
+ */
+export async function getUserById(id) {
+  if (id === null || id === undefined || id === '') return null;
+  try {
+    const data = await apiClient.get(`/users/${id}`);
+    return data?.data || data || null;
+  } catch (err) {
+    console.warn('[ApiService] getUserById failed:', err.message);
+    return null;
+  }
 }
 
 // ──────────────────────────── CATEGORIES ────────────────────────────
@@ -347,6 +368,7 @@ const ApiService = {
   getCurrentUser,
   getToken,
   isAuthenticated,
+  getUserById,
   getCategories,
   getReports,
   getFoundReports,

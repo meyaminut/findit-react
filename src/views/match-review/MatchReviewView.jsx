@@ -26,6 +26,14 @@ import {
 } from '../../services/matchSync';
 import { isReportAwaiting, isReportVerified, reportStatusLabel } from '../../services/reportStatus';
 import { MatchReviewModel } from '../../models/MatchReviewModel';
+import {
+  normalizePhone,
+  buildWhatsAppUrl,
+  buildNotificationMessage,
+  notifEventLabel,
+  WHATSAPP_EVENTS,
+} from '../../services/whatsapp';
+import WhatsAppPreviewModal from '../dashboard/components/WhatsAppPreviewModal';
 import './MatchReviewView.css';
 
 /**
@@ -57,6 +65,36 @@ const formatReportTimestamp = (iso) => {
 };
 
 // Konversi satu report live (lost) menjadi ticket UI + kandidat (dari match & found report).
+/**
+ * Ekstrak nomor WhatsApp tamu dari laporan lost, dari berbagai bentuk field
+ * yang mungkin dikirim backend Go (camelCase / snake_case / bersarang user).
+ * Diprioritaskan sebagai sumber utama karena banyak laporan tidak punya
+ * `user_id` (tamu melapor tanpa login / dibuat petugas via front desk).
+ */
+const extractReportPhone = (r) => {
+  if (!r) return '';
+  return (
+    r.phone ||
+    r.phone_number ||
+    r.guest_phone ||
+    r.guest_phone_number ||
+    r.guestPhone ||
+    r.contact_phone ||
+    r.phoneNumber ||
+    r.wa_number ||
+    r.whatsapp ||
+    r.user?.phone ||
+    r.user?.phone_number ||
+    r.user?.guest_phone ||
+    r.guest?.phone ||
+    r.contact ||
+    r.contact_number ||
+    r.phone_no ||
+    r.phoneOrWa ||
+    ''
+  );
+};
+
 const buildApiTickets = (reports, matches) => {
   const list = Array.isArray(reports) ? reports : [];
   const matchList = Array.isArray(matches) ? matches : [];
@@ -111,6 +149,8 @@ const buildApiTickets = (reports, matches) => {
       statusRaw: r.status,
       reportedAt: formatReportTimestamp(r.created_at),
       createdAt: r.created_at || new Date().toISOString(),
+      _userId: r.user_id ?? r.userId ?? r.user?.id ?? null,
+      _userPhone: extractReportPhone(r),
       _candidate: candidate,
     };
   });
@@ -220,6 +260,8 @@ export function MatchReviewView({
   const [pickerTicket, setPickerTicket] = useState(null);
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerLoading, setPickerLoading] = useState(false);
+  const [waPreview, setWaPreview] = useState(null);
+  const [waPreviewLoading, setWaPreviewLoading] = useState(false);
 
   const displayTickets = apiActive && Array.isArray(apiTickets) ? apiTickets : tickets;
 
@@ -232,15 +274,15 @@ export function MatchReviewView({
   const loadApiTickets = useCallback(async () => {
     try {
       try {
-        const health = await ApiService.checkHealth();
+        const [health, reports, matches] = await Promise.all([
+          ApiService.checkHealth(),
+          ApiService.getReports(),
+          ApiService.getMatches(),
+        ]);
         if (!health.online) {
           setApiActive(false);
           return;
         }
-        const [reports, matches] = await Promise.all([
-          ApiService.getReports(),
-          ApiService.getMatches(),
-        ]);
         setApiTickets(buildApiTickets(reports, matches));
         setApiReportsRaw(Array.isArray(reports) ? reports : []);
         setApiMatchesRaw(Array.isArray(matches) ? matches : []);
@@ -255,7 +297,6 @@ export function MatchReviewView({
   }, []);
 
   useEffect(() => {
-    refreshData();
     loadApiTickets();
     const handleUpdate = () => refreshData();
     window.addEventListener('findit_tickets_updated', handleUpdate);
@@ -340,7 +381,12 @@ export function MatchReviewView({
     let viaApi = false;
     if (isApiCandidate(candidate)) {
       try {
-        viaApi = await applyMatchDecision({ candidate, nextStatus, extra });
+        viaApi = await applyMatchDecision({
+          candidate,
+          nextStatus,
+          extra,
+          matches: apiMatchesRaw,
+        });
       } catch (err) {
         console.warn('[MatchReview] API decision gagal, fallback ke StorageService:', err.message);
       }
@@ -355,11 +401,71 @@ export function MatchReviewView({
     );
   };
 
+  // ── WhatsApp preview (semi-otomatis via deep link wa.me) ──
+  const handleOpenWhatsAppPreview = async (ticket) => {
+    if (!ticket) return;
+    setWaPreviewLoading(true);
+    try {
+      // Prioritas: nomor WA langsung dari laporan (`_userPhone`) — paling andal,
+      // tersedia walau laporan dibuat petugas/front desk tanpa akun (user_id null).
+      let phone = normalizePhone(ticket._userPhone);
+      // Fallback: ambil dari akun tamu via `_userId`.
+      if (!phone && ticket._userId) {
+        const user = await ApiService.getUserById(ticket._userId);
+        phone = normalizePhone(user?.phone);
+      }
+      if (!phone) {
+        showToast(`Nomor WhatsApp tamu belum tersedia.`, 'info');
+        return;
+      }
+      const message = buildNotificationMessage({
+        event: WHATSAPP_EVENTS.VERIFIED,
+        guestName: ticket.guestName,
+        itemTitle: ticket.itemName,
+        room: ticket.roomNumber,
+      });
+      setWaPreview({
+        eventLabel: notifEventLabel(WHATSAPP_EVENTS.VERIFIED),
+        guestName: ticket.guestName,
+        phone,
+        itemTitle: ticket.itemName,
+        room: ticket.roomNumber,
+        message,
+        url: buildWhatsAppUrl(phone, message),
+      });
+    } catch (err) {
+      console.warn('[MatchReview] gagal menyiapkan notifikasi WhatsApp:', err.message);
+      showToast(`Gagal menyiapkan notifikasi WhatsApp: ${err.message}`, 'info');
+    } finally {
+      setWaPreviewLoading(false);
+    }
+  };
+
+  const handleCloseWhatsAppPreview = () => setWaPreview(null);
+
+  const handleWhatsAppMessageChange = (text) =>
+    setWaPreview((prev) => (prev ? { ...prev, message: text, url: buildWhatsAppUrl(prev.phone, text) } : prev));
+
+  const handleConfirmWhatsAppSend = () => {
+    if (!waPreview) return;
+    const url = buildWhatsAppUrl(waPreview.phone, waPreview.message);
+    if (!url) {
+      showToast('Nomor WhatsApp tidak valid.', 'info');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+    showToast(`Membuka WhatsApp untuk ${waPreview.guestName} (${waPreview.phone}).`, 'success');
+    setWaPreview(null);
+  };
+
   const handleConfirmVerification = async (ticket, candidate) => {
     if (!candidate) {
       showToast('Belum ada kandidat barang temuan. Gunakan tombol Pasangkan untuk mencari barang temuan.', 'info');
       return;
     }
+    // Update UI instan (optimistik) — jaringan diproses di latar belakang.
+    applyLocalDecision(ticket, 'approved');
+    setInspectingTicket(null);
     setActionLoading(true);
     try {
       const user = ApiService.getCurrentUser();
@@ -367,12 +473,18 @@ export function MatchReviewView({
         verified_by: user?.id ?? user?.ID ?? null,
       });
       showToast(`Barang ${ticket.id} berhasil ditandai Terverifikasi!`, 'success');
+      void handleOpenWhatsAppPreview(ticket);
+    } catch (err) {
+      console.warn('[MatchReview] verifikasi gagal:', err.message);
+      showToast(`Gagal memverifikasi: ${err.message}`, 'info');
     } finally {
       setActionLoading(false);
-      setInspectingTicket(null);
       refreshData();
       loadApiTickets();
     }
+    // Wa Giải nén: mở preview WhatsApp (deep link wa.me) saat verifikasi sukses —
+    // admin tinggal konfirmasi kirim ke tamu tanpa menyalin nomor manual.
+    void handleOpenWhatsAppPreview(ticket);
   };
 
   const handleRejectRelation = async (ticket, candidate) => {
@@ -380,26 +492,39 @@ export function MatchReviewView({
       showToast('Belum ada kandidat barang temuan untuk dilepas.', 'info');
       return;
     }
+    applyLocalDecision(ticket, 'rejected');
+    setInspectingTicket(null);
     setActionLoading(true);
     try {
       await decideMatch(ticket, candidate, 'rejected');
       showToast(`Kandidat barang temuan dilepaskan dari barang ${ticket.id}.`, 'info');
+    } catch (err) {
+      console.warn('[MatchReview] pelepasan pasangan gagal:', err.message);
+      showToast(`Gagal melepas pasangan: ${err.message}`, 'info');
     } finally {
       setActionLoading(false);
-      setInspectingTicket(null);
       refreshData();
       loadApiTickets();
     }
   };
 
-  const handleExportCSV = () => {
-    StorageService.exportToCSV(filteredTickets, `Laporan_Verifikasi_${Date.now()}.csv`);
-  };
-
-  const handleLoadSampleData = () => {
-    StorageService.seedSampleData();
-    refreshData();
-    showToast('2 Sampel barang klaim dan barang temuan berhasil dimuat!', 'success');
+  // Update status tampilan baris tanpa menunggu network (di-reconcile saat reload).
+  const applyLocalDecision = (ticket, nextStatus) => {
+    const patched = (t) =>
+      t.id === ticket.id
+        ? {
+            ...t,
+            status:
+              nextStatus === 'approved' ? 'Terverifikasi' : 'Menunggu Verifikasi',
+            statusRaw: nextStatus === 'approved' ? 'dikonfirmasi' : 'baru',
+            _candidate:
+              nextStatus === 'approved'
+                ? { ...(t._candidate || {}), matchStatus: 'approved' }
+                : null,
+          }
+        : t;
+    setTickets((prev) => (Array.isArray(prev) ? prev.map(patched) : prev));
+    setApiTickets((prev) => (Array.isArray(prev) ? prev.map(patched) : prev));
   };
 
   // Inspecting candidate helper
@@ -436,13 +561,30 @@ export function MatchReviewView({
     try {
       const created = await ApiService.createMatch(pickerTicket._apiId, found._apiId, 0);
       const matchId = created?.id ?? created?.ID ?? '';
+      // Tampilkan pasangan instan sebelum reload di latar belakang selesai.
+      const candidate = {
+        id: `match-${matchId}`,
+        _apiId: matchId,
+        _source: 'api',
+        lost_report_id: String(pickerTicket._apiId),
+        found_report_id: String(found._apiId),
+        name: found.title || found.name || 'Barang Temuan',
+        category: found.category || '',
+        photoUrl: resolveMediaUrl(found.photo_url || ''),
+        roomNumber: found.room_number || '',
+        locationFound: found.location || (found.room_number ? `Kamar ${found.room_number}` : ''),
+        matchStatus: 'pending',
+      };
+      const patch = (t) =>
+        t.id === pickerTicket.id ? { ...t, _candidate: candidate } : t;
+      setApiTickets((prev) => (Array.isArray(prev) ? prev.map(patch) : prev));
       showToast(
         `Pasangan #${matchId} berhasil dibuat dan menunggu verifikasi.`,
         'success'
       );
       setPickerTicket(null);
       refreshData();
-      await loadApiTickets();
+      loadApiTickets();
     } catch (err) {
       console.warn('[MatchReview] createMatch gagal:', err.message);
       showToast(`Gagal membuat pasangan: ${err.message}`, 'info');
@@ -1038,6 +1180,15 @@ export function MatchReviewView({
           </div>
         </div>
       )}
+
+      {/* Modal: Pratinjau WhatsApp (deep link wa.me) */}
+      <WhatsAppPreviewModal
+        preview={waPreview}
+        isLoading={waPreviewLoading}
+        onClose={handleCloseWhatsAppPreview}
+        onMessageChange={handleWhatsAppMessageChange}
+        onSend={handleConfirmWhatsAppSend}
+      />
 
       {/* Toast Notification */}
       {toastNotification && (
