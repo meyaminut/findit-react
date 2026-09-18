@@ -1,0 +1,163 @@
+/* ConfirmDialog.css
+   Modal konfirmasi generik — konsisten dengan sistem modal & toast app.
+   Prefix `confirm-dialog-*` agar tidak bentrok dengan CSS halaman. */
+
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 22, 78, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: confirmFadeIn 0.18s ease;
+}
+
+.confirm-dialog-box {
+  background: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 14px;
+  box-shadow: 0 20px 45px rgba(0, 22, 78, 0.22);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  animation: confirmScaleUp 0.18s ease;
+}
+
+.confirm-dialog-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.confirm-dialog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.confirm-dialog-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirm-dialog-icon.is-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.confirm-dialog-icon.is-warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.confirm-dialog-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.confirm-dialog-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  display: flex;
+}
+
+.confirm-dialog-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.confirm-dialog-body {
+  padding: 20px 20px 12px;
+}
+
+.confirm-dialog-message {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.btn-confirm-neutral {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-confirm-neutral:hover {
+  background: #f1f5f9;
+}
+
+.btn-confirm-danger-cta {
+  background: #dc2626;
+  border: none;
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-confirm-danger-cta:hover {
+  background: #b91c1c;
+}
+
+.btn-confirm-danger-cta:disabled,
+.btn-confirm-neutral:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes confirmFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes confirmScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

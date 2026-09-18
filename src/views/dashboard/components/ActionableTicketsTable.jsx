@@ -6,6 +6,7 @@ import {
   Layers,
   Search 
 } from 'lucide-react';
+import { resolveTicketAction, TICKET_ACTION } from '../../../services/reportStatus';
 
 /**
  * View Component: ActionableTicketsTable
@@ -37,9 +38,6 @@ export function ActionableTicketsTable({
 
   const lostCount = tickets.filter((t) => t.type === 'lost').length;
   const foundCount = tickets.filter((t) => t.type === 'found').length;
-
-  const isMatchApproved = (ticket) =>
-    ticket._candidate?.matchStatus === 'approved' || ticket.statusType === 'green';
 
   return (
     <div className="actionable-tickets-card">
@@ -117,7 +115,9 @@ export function ActionableTicketsTable({
                 </td>
               </tr>
             ) : (
-              tickets.map((ticket) => (
+              tickets.map((ticket) => {
+                const action = resolveTicketAction(ticket);
+                return (
                 <tr key={ticket.id} className="ticket-table-row">
                   {/* 1. Ticket Number */}
                   <td className="ticket-id-cell">
@@ -181,7 +181,16 @@ export function ActionableTicketsTable({
 
                   {/* 6. Action Button */}
                   <td className="action-cell text-center">
-                    {isMatchApproved(ticket) ? (
+                    {action === TICKET_ACTION.DONE ? (
+                      <button
+                        type="button"
+                        className="handover-btn-green"
+                        disabled
+                        title="Barang sudah diserahkan ke tamu"
+                      >
+                        Sudah Diserahkan
+                      </button>
+                    ) : action === TICKET_ACTION.HANDOVER ? (
                       <button
                         type="button"
                         className="handover-btn-green"
@@ -200,7 +209,8 @@ export function ActionableTicketsTable({
                     )}
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

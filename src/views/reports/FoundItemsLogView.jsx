@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
 import FoundItemsKpiHeader from './components/FoundItemsKpiHeader';
@@ -6,6 +7,8 @@ import FoundItemsFilters from './components/FoundItemsFilters';
 import FoundItemsTable from './components/FoundItemsTable';
 import ManualFoundItemModal from './components/ManualFoundItemModal';
 import StorageService from '../../services/StorageService';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './FoundItemsLogView.css';
 
 /**
@@ -22,6 +25,8 @@ export function FoundItemsLogView({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
+  const confirmDialog = useConfirmDialog();
 
   const loadItems = () => {
     setItems(StorageService.getFoundItems());
@@ -58,10 +63,20 @@ export function FoundItemsLogView({
     StorageService.addFoundItem(formData);
   };
 
-  const handleDeleteItem = (itemId) => {
-    if (window.confirm('Hapus barang ini dari inventaris?')) {
-      StorageService.deleteFoundItem(itemId);
-    }
+  const showToast = (message, type = 'success') => {
+    setToastNotification({ message, type });
+    setTimeout(() => setToastNotification(null), 3500);
+  };
+
+  const handleDeleteItem = async (itemId) => {
+    const item = items.find((i) => i.id === itemId);
+    const ok = await confirmDialog.confirm({
+      title: 'Hapus Barang?',
+      message: `Hapus barang "${item?.name || itemId}" dari inventaris? Tindakan ini permanen dan tidak dapat dibatalkan.`,
+    });
+    if (!ok) return;
+    StorageService.deleteFoundItem(itemId);
+    showToast(`Barang temuan "${item?.name || itemId}" berhasil dihapus dari inventaris.`, 'success');
   };
 
   const handleExportCSV = () => {
@@ -124,6 +139,17 @@ export function FoundItemsLogView({
         onClose={() => setIsManualModalOpen(false)}
         onSave={handleSaveManualItem}
       />
+
+      {/* Confirm Dialog (pengganti window.confirm) */}
+      {confirmDialog.dialog && <ConfirmDialog {...confirmDialog.dialog} />}
+
+      {/* Toast Notification */}
+      {toastNotification && (
+        <div className={`inventory-toast-pill ${toastNotification.type}`}>
+          <CheckCircle2 size={16} />
+          <span>{toastNotification.message}</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -13,6 +13,26 @@
   overflow-x: hidden;
 }
 
+/* Notice backend offline (daftar laporan kosong, murni dari API) */
+.offline-api-notice {
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border: 1px solid #F59E0B;
+  border-radius: 8px;
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Badge sumber data (hanya klaim kehilangan) di filter toolbar */
+.reports-source-badge {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  padding: 0 4px;
+}
+
 .operational-reports-main-viewport {
   flex: 1;
   display: flex;

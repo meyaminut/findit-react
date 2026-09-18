@@ -88,3 +88,32 @@ export function reportStatusType(raw) {
       return 'gray'
   }
 }
+
+/**
+ * Aksi tombol per baris — SATU sumber kebenaran, murni dari status report,
+ * terlepas dari type (lost/found). Dipakai semua halaman yang merender
+ * tombol aksi "Cocokkan" / "Tandai Diserahkan" / "Sudah Diserahkan".
+ *
+ *  'match'    -> belum verifikasi (baru/dicocokkan)  : tombol "Cocokkan"
+ *  'handover' -> match disetujui / terverifikasi     : tombol "Tandai Diserahkan"
+ *  'done'     -> sudah diserahkan (final state)      : tombol disabled "Sudah Diserahkan"
+ */
+export const TICKET_ACTION = Object.freeze({
+  MATCH: 'match',
+  HANDOVER: 'handover',
+  DONE: 'done',
+});
+
+export function resolveTicketAction(ticket) {
+  if (!ticket) return TICKET_ACTION.MATCH;
+  const status = ticket.status ?? ticket.statusRaw ?? '';
+  if (isReportResolved(status)) return TICKET_ACTION.DONE;
+  if (
+    isReportVerified(status) ||
+    ticket.statusType === 'green' ||
+    String(ticket._candidate?.matchStatus || '').toLowerCase() === 'approved'
+  ) {
+    return TICKET_ACTION.HANDOVER;
+  }
+  return TICKET_ACTION.MATCH;
+}

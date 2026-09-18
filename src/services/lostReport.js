@@ -11,8 +11,9 @@
  *   2. Simpan laporan via ApiService.createLostReport (kirim room_number
  *      supaya kolom "TAMU & NO. KAMAR" di Verifikasi konsisten).
  *   3. Fallback offline -> tiket lokal StorageService (dashboard tetap jalan).
- *   4. Mirror ke arsip operasional (StorageService.addReport) agar hasilnya
- *      langsung muncul di halaman arsip laporan (/admin/laporan).
+ *
+ * Arsip halaman Laporan (/admin/laporan) dibaca LANGSUNG dari backend
+ * (OperationalReportsView API-first) — tidak memerlukan mirror localStorage.
  */
 
 import ApiService from './ApiService';
@@ -30,8 +31,8 @@ async function uploadPhoto(file) {
  * Simpan laporan kehilangan. Return shape standar form:
  *   { status: 'success', data, message }
  *
- * - online: API create lost report -> mirror ke arsip operasional.
- * - offline: fallback tiket lokal -> mirror ke arsip operasional.
+ * - online: API create lost report.
+ * - offline: fallback tiket lokal ke StorageService.
  */
 async function createReport(payload = {}) {
   const title = payload.title || 'Laporan Kehilangan Barang';
@@ -39,12 +40,6 @@ async function createReport(payload = {}) {
   const category = payload.category || 'Lainnya';
   const roomNumber = payload.room_number || '';
   const location = payload.location || '';
-  const reportedBy =
-    ApiService.getCurrentUser()?.name || 'Admin Front Office';
-  const reporterName = payload.guestName && payload.guestName !== 'Tamu'
-    ? payload.guestName
-    : reportedBy;
-  const reporterContact = roomNumber ? `Kamar ${roomNumber}` : 'Front Office';
 
   try {
     const data = await ApiService.createLostReport({
@@ -55,20 +50,6 @@ async function createReport(payload = {}) {
       location,
       photo_url: payload.photo_url || '',
       guestName: payload.guestName || '',
-    });
-
-    // Mirror ke arsip operasional agar muncul di /admin/laporan.
-    StorageService.addReport({
-      title,
-      reportType: 'lost_claim',
-      category,
-      reporterName,
-      reporterContact,
-      location: location || (roomNumber ? `Kamar ${roomNumber}` : 'Area Hotel'),
-      priority: 'Normal',
-      description,
-      officialOfficer: reportedBy,
-      status: 'Diterbitkan',
     });
 
     return {
@@ -88,19 +69,6 @@ async function createReport(payload = {}) {
       secretDetail: description || '-',
       brand: '-',
       color: payload.features || '-',
-    });
-
-    StorageService.addReport({
-      title,
-      reportType: 'lost_claim',
-      category,
-      reporterName,
-      reporterContact,
-      location: location || (roomNumber ? `Kamar ${roomNumber}` : 'Area Hotel'),
-      priority: 'Normal',
-      description,
-      officialOfficer: reportedBy,
-      status: 'Diterbitkan',
     });
 
     return {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   FileText, 
   Plus, 
@@ -15,63 +15,133 @@ import {
 } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
-import { StorageService } from '../../services/StorageService';
+import ApiService from '../../services/ApiService';
+import {
+  isReportAwaiting,
+  isReportVerified,
+  isReportResolved,
+  reportStatusLabel,
+  reportStatusType,
+} from '../../services/reportStatus';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './OperationalReportsView.css';
 
 /**
  * View Component: OperationalReportsView (Halaman: Laporan)
- * Enables hotel administrators to:
- * 1. View 4 Top KPI cards of official operational archives.
- * 2. Filter & search operational reports (found item, guest loss, handover, audit recap).
- * 3. Create new official operational reports with a full-featured modal form.
- * 4. Preview and print official hotel documentation sheets.
+ * API-first — daftar laporan diambil LIVE dari backend (type 'lost'),
+ * konsisten dengan antrean Verifikasi (MatchReviewView), bukan localStorage.
+ * Offline backend -> daftar kosong + banner peringatan.
  */
+const mapApiLostReports = (list) => {
+  if (!Array.isArray(list)) return [];
+  return list.map((r) => {
+    const id = r.id ?? r.ID;
+    const dateStr = r.created_at
+      ? new Date(r.created_at).toLocaleDateString('id-ID', {
+          day: 'numeric', month: 'short', year: 'numeric'
+        })
+      : '';
+    const timeStr = r.created_at
+      ? new Date(r.created_at).toLocaleTimeString('id-ID', {
+          hour: '2-digit', minute: '2-digit'
+        })
+      : '';
+    const roomNumber = r.room_number || r.roomNumber || '';
+    return {
+      id: r.report_identifier || `#LAP-${id}`,
+      _apiId: id,
+      _source: 'api',
+      title: r.title || 'Laporan Kehilangan Barang',
+      reportType: 'lost_claim',
+      category: r.category || 'Lainnya',
+      reporterName: r.user?.name || r.guest_name || r.name || 'Tamu',
+      reporterContact: roomNumber ? `Kamar ${roomNumber}` : '-',
+      location: r.location || (roomNumber ? `Kamar ${roomNumber}` : 'Area Hotel'),
+      priority: r.priority || 'Normal',
+      description: r.description || '',
+      officialOfficer: r.verified_by ? 'Petugas Pemeriksa' : 'Admin On Duty',
+      statusRaw: r.status,
+      status: reportStatusLabel(r.status, 'lost'),
+      dateFormatted: `${dateStr}, ${timeStr} WIB`,
+      createdAt: r.created_at || new Date().toISOString(),
+    };
+  });
+};
+
+// Fetch helper di luar komponen (modul murni, tanpa state) agar efek mount
+// hanya memicu promise async — tidak ada setState sinkron di dalam efek.
+const fetchLostReports = async () => {
+  try {
+    const [health, rawReports] = await Promise.all([
+      ApiService.checkHealth(),
+      ApiService.getReports('lost'),
+    ]);
+    if (!health.online) {
+      return { online: false, reports: [] };
+    }
+    return { online: true, reports: mapApiLostReports(rawReports) };
+  } catch (err) {
+    console.warn('[OperationalReportsView] API tidak tersedia:', err.message);
+    return { online: false, reports: [] };
+  }
+};
+
 export function OperationalReportsView({ 
   activeNav = 'Laporan', 
   onNavChange, 
   onLogout 
 }) {
-  const [reports, setReports] = useState(() => StorageService.getReports());
+  const [reports, setReports] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [previewReport, setPreviewReport] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
+  const [apiChecked, setApiChecked] = useState(false);
+  const [apiActive, setApiActive] = useState(false);
+  const confirmDialog = useConfirmDialog();
 
-  const refreshData = () => {
-    setReports(StorageService.getReports());
-  };
+  // API-first: tarik laporan kehilangan (lost) live dari backend — satu sumber
+  // kebenaran yang sama dengan antrean Verifikasi. Tidak pakai localStorage.
+  const loadApiReports = useCallback(async () => {
+    try {
+      const { online, reports: apiReports } = await fetchLostReports();
+      setApiActive(online);
+      setReports(apiReports);
+    } finally {
+      setApiChecked(true);
+    }
+  }, []);
 
   useEffect(() => {
-    refreshData();
-    const handleUpdate = () => refreshData();
+    void loadApiReports();
+    const handleUpdate = () => void loadApiReports();
     window.addEventListener('findit_reports_updated', handleUpdate);
+    window.addEventListener('findit_tickets_updated', handleUpdate);
     return () => {
       window.removeEventListener('findit_reports_updated', handleUpdate);
+      window.removeEventListener('findit_tickets_updated', handleUpdate);
     };
-  }, []);
+  }, [loadApiReports]);
 
   const showToast = (message, type = 'success') => {
     setToastNotification({ message, type });
     setTimeout(() => setToastNotification(null), 3500);
   };
 
-  // Compute 4 Top Metrics
+  // Compute 4 Top Metrics (status klaim kehilangan — konsisten dgn Verifikasi)
   const metrics = useMemo(() => {
     const total = reports.length;
-    const found = reports.filter((r) => r.reportType === 'found_item').length;
-    const lost = reports.filter((r) => r.reportType === 'lost_claim').length;
-    const other = reports.filter(
-      (r) => r.reportType === 'handover_report' || r.reportType === 'audit_recap'
-    ).length;
+    const awaiting = reports.filter((r) => isReportAwaiting(r.statusRaw)).length;
+    const verified = reports.filter((r) => isReportVerified(r.statusRaw)).length;
+    const resolved = reports.filter((r) => isReportResolved(r.statusRaw)).length;
 
-    return { total, found, lost, other };
+    return { total, awaiting, verified, resolved };
   }, [reports]);
 
   // Filtered reports
   const filteredReports = useMemo(() => {
     return reports.filter((r) => {
-      if (typeFilter !== 'all' && r.reportType !== typeFilter) return false;
       if (statusFilter !== 'all' && r.status !== statusFilter) return false;
 
       if (searchQuery.trim()) {
@@ -88,14 +158,27 @@ export function OperationalReportsView({
 
       return true;
     });
-  }, [reports, typeFilter, statusFilter, searchQuery]);
+  }, [reports, statusFilter, searchQuery]);
 
-  const handleDeleteReport = (reportId) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus laporan ${reportId}?`)) {
-      StorageService.deleteReport(reportId);
-      refreshData();
-      showToast(`Laporan ${reportId} berhasil dihapus.`, 'info');
+  const handleDeleteReport = async (report) => {
+    if (!report) return;
+    const ok = await confirmDialog.confirm({
+      title: 'Hapus Laporan?',
+      message: `Apakah Anda yakin ingin menghapus laporan ${report.id} dari backend? Tindakan ini permanen dan tidak dapat dibatalkan.`,
+    });
+    if (!ok) return;
+    if (report._source === 'api' && report._apiId != null) {
+      try {
+        await ApiService.deleteReport(report._apiId);
+        showToast(`Laporan ${report.id} berhasil dihapus dari backend.`, 'success');
+      } catch (err) {
+        showToast(`Gagal menghapus laporan: ${err.message}`, 'info');
+      } finally {
+        await loadApiReports();
+      }
+      return;
     }
+    showToast('Laporan ini tidak bisa dihapus dari backend.', 'info');
   };
 
   const getReportTypeBadge = (type) => {
@@ -128,14 +211,16 @@ export function OperationalReportsView({
     }
   };
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'Diterbitkan':
-        return 'diterbitkan';
-      case 'Terverifikasi':
+  const getStatusClass = (statusRaw) => {
+    switch (reportStatusType(statusRaw)) {
+      case 'green':
         return 'terverifikasi';
-      case 'Selesai':
+      case 'amber':
+        return 'diterbitkan';
+      case 'blue':
         return 'selesai';
+      case 'red':
+        return 'draft';
       default:
         return 'draft';
     }
@@ -161,6 +246,13 @@ export function OperationalReportsView({
 
         {/* Workspace Content */}
         <main className="operational-reports-workspace">
+          {apiChecked && !apiActive && (
+            <div className="offline-api-notice" role="status">
+              Backend tidak dapat dihubungi — daftar laporan kosong. Laporan baru
+              hanya akan tersimpan di backend saat koneksi kembali.
+            </div>
+          )}
+
           {/* Top Header Section */}
           <section className="reports-header-section">
             <div className="reports-header-left">
@@ -190,56 +282,56 @@ export function OperationalReportsView({
             {/* Card 1: Total Laporan */}
             <div className="report-summary-card">
               <div className="summary-card-header">
-                <span className="summary-card-title">TOTAL LAPORAN</span>
+                <span className="summary-card-title">TOTAL KLAIM</span>
                 <div className="summary-icon-box blue">
                   <Folder size={16} />
                 </div>
               </div>
               <div className="summary-card-number">{metrics.total}</div>
               <div className="summary-card-subtext positive">
-                <span>📈 Arsip resmi terdaftar</span>
+                <span>📈 Laporan kehilangan tamu</span>
               </div>
             </div>
 
-            {/* Card 2: Laporan Temuan HK */}
+            {/* Card 2: Menunggu Verifikasi */}
             <div className="report-summary-card">
               <div className="summary-card-header">
-                <span className="summary-card-title">BARANG TEMUAN HK</span>
+                <span className="summary-card-title">MENUNGGU VERIFIKASI</span>
                 <div className="summary-icon-box emerald">
                   <CheckCircle2 size={16} />
                 </div>
               </div>
-              <div className="summary-card-number">{metrics.found}</div>
+              <div className="summary-card-number">{metrics.awaiting}</div>
               <div className="summary-card-subtext">
-                <span>• Inventaris housekeeping</span>
+                <span>• Butuh pencocokan admin</span>
               </div>
             </div>
 
-            {/* Card 3: Laporan Kehilangan Tamu */}
+            {/* Card 3: Terverifikasi */}
             <div className="report-summary-card">
               <div className="summary-card-header">
-                <span className="summary-card-title">KLAIM KEHILANGAN</span>
+                <span className="summary-card-title">TERVERIFIKASI</span>
                 <div className="summary-icon-box amber">
                   <AlertCircle size={16} />
                 </div>
               </div>
-              <div className="summary-card-number">{metrics.lost}</div>
+              <div className="summary-card-number">{metrics.verified}</div>
               <div className="summary-card-subtext">
-                <span>• Laporan tamu hotel</span>
+                <span>• Pasangan dikonfirmasi tim FO</span>
               </div>
             </div>
 
-            {/* Card 4: Berita Acara & Rekap */}
+            {/* Card 4: Diserahkan */}
             <div className="report-summary-card">
               <div className="summary-card-header">
-                <span className="summary-card-title">BERITA ACARA &amp; REKAP</span>
+                <span className="summary-card-title">DISERAHKAN</span>
                 <div className="summary-icon-box purple">
                   <Shield size={16} />
                 </div>
               </div>
-              <div className="summary-card-number">{metrics.other}</div>
+              <div className="summary-card-number">{metrics.resolved}</div>
               <div className="summary-card-subtext">
-                <span>• Handover &amp; audit shift</span>
+                <span>• Selesai serah terima tamu</span>
               </div>
             </div>
           </section>
@@ -269,22 +361,6 @@ export function OperationalReportsView({
               </div>
 
               <div className="reports-dropdown-group">
-                {/* Tipe Filter */}
-                <div className="reports-select-box">
-                  <select
-                    className="reports-select-element"
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                  >
-                    <option value="all">Semua Tipe Laporan</option>
-                    <option value="found_item">Barang Temuan HK</option>
-                    <option value="lost_claim">Klaim Kehilangan Tamu</option>
-                    <option value="handover_report">Berita Acara Handover</option>
-                    <option value="audit_recap">Rekap Audit Shift</option>
-                  </select>
-                  <ChevronDown size={14} className="reports-select-chevron" />
-                </div>
-
                 {/* Status Filter */}
                 <div className="reports-select-box">
                   <select
@@ -293,12 +369,20 @@ export function OperationalReportsView({
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
                     <option value="all">Semua Status</option>
-                    <option value="Diterbitkan">Diterbitkan</option>
+                    <option value="Baru Masuk">Baru Masuk</option>
+                    <option value="Dicocokkan">Dicocokkan</option>
                     <option value="Terverifikasi">Terverifikasi</option>
-                    <option value="Selesai">Selesai</option>
-                    <option value="Draft">Draft</option>
+                    <option value="Selesai Handover">Selesai Handover</option>
+                    <option value="Ditolak">Ditolak</option>
                   </select>
                   <ChevronDown size={14} className="reports-select-chevron" />
+                </div>
+
+                {/* Info Sumber Data */}
+                <div className="reports-select-box">
+                  <span className="reports-source-badge">
+                    <span className="type-tag lost_claim">HANYA KLAIM KEHILANGAN</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -324,9 +408,13 @@ export function OperationalReportsView({
                       <td colSpan={8}>
                         <div className="reports-empty-box">
                           <FileText size={36} className="reports-empty-icon" />
-                          <h4 className="reports-empty-title">Belum Ada Laporan Ditemukan</h4>
+                          <h4 className="reports-empty-title">
+                            {apiActive ? 'Belum Ada Laporan Ditemukan' : 'Backend Tidak Dapat Dihubungi'}
+                          </h4>
                           <p className="reports-empty-desc">
-                            Tidak ada dokumen laporan yang cocok dengan kriteria pencarian atau arsip masih kosong.
+                            {apiActive
+                              ? 'Tidak ada laporan kehilangan tamu yang cocok dengan kriteria pencarian atau arsip masih kosong.'
+                              : 'Daftar laporan berasal langsung dari backend (sama dengan halaman Verifikasi). Periksa koneksi server lalu muat ulang halaman ini.'}
                           </p>
                           <button
                             type="button"
@@ -365,7 +453,7 @@ export function OperationalReportsView({
                           <span style={{ fontSize: '12px', color: '#64748b' }}>{r.dateFormatted}</span>
                         </td>
                         <td>
-                          <span className={`status-pill-badge ${getStatusClass(r.status)}`}>
+                          <span className={`status-pill-badge ${getStatusClass(r.statusRaw)}`}>
                             <span className="status-dot" />
                             {r.status}
                           </span>
@@ -384,7 +472,7 @@ export function OperationalReportsView({
                             <button
                               type="button"
                               className="btn-action-delete"
-                              onClick={() => handleDeleteReport(r.id)}
+                              onClick={() => handleDeleteReport(r)}
                               title="Hapus Laporan"
                             >
                               <Trash2 size={13} />
@@ -519,6 +607,9 @@ export function OperationalReportsView({
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog (pengganti window.confirm) */}
+      {confirmDialog.dialog && <ConfirmDialog {...confirmDialog.dialog} />}
 
       {/* Toast Notification */}
       {toastNotification && (

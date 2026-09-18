@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Ticket, Plus } from 'lucide-react';
+import { Ticket, Plus, CheckCircle2 } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
 import TopNavbar from '../dashboard/components/TopNavbar';
 import ClaimTicketsToolbar from './components/ClaimTicketsToolbar';
 import ClaimTicketsTable from './components/ClaimTicketsTable';
 import StorageService from '../../services/StorageService';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './ClaimTicketsListView.css';
 
 /**
@@ -20,6 +22,8 @@ export function ClaimTicketsListView({
   const [tickets, setTickets] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [toastNotification, setToastNotification] = useState(null);
+  const confirmDialog = useConfirmDialog();
 
   const loadTickets = () => {
     setTickets(StorageService.getTickets());
@@ -58,10 +62,20 @@ export function ClaimTicketsListView({
     }
   };
 
-  const handleDeleteTicket = (ticketId) => {
-    if (window.confirm('Yakin ingin menghapus tiket ini?')) {
-      StorageService.deleteTicket(ticketId);
-    }
+  const showToast = (message, type = 'success') => {
+    setToastNotification({ message, type });
+    setTimeout(() => setToastNotification(null), 3500);
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    const ticket = tickets.find((t) => t.id === ticketId);
+    const ok = await confirmDialog.confirm({
+      title: 'Hapus Tiket?',
+      message: `Yakin ingin menghapus tiket ${ticket?.id || ticketId}? Tindakan ini tidak dapat dibatalkan.`,
+    });
+    if (!ok) return;
+    StorageService.deleteTicket(ticketId);
+    showToast(`Tiket ${ticket?.id || ticketId} berhasil dihapus.`, 'success');
   };
 
   const handleNewClaim = () => {
@@ -142,6 +156,17 @@ export function ClaimTicketsListView({
           />
         </main>
       </div>
+
+      {/* Confirm Dialog (pengganti window.confirm) */}
+      {confirmDialog.dialog && <ConfirmDialog {...confirmDialog.dialog} />}
+
+      {/* Toast Notification */}
+      {toastNotification && (
+        <div className={`claim-toast-pill ${toastNotification.type}`}>
+          <CheckCircle2 size={16} />
+          <span>{toastNotification.message}</span>
+        </div>
+      )}
     </div>
   );
 }

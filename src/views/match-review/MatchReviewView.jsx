@@ -34,6 +34,8 @@ import {
   WHATSAPP_EVENTS,
 } from '../../services/whatsapp';
 import WhatsAppPreviewModal from '../dashboard/components/WhatsAppPreviewModal';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './MatchReviewView.css';
 
 /**
@@ -252,6 +254,7 @@ export function MatchReviewView({
   const [inspectingTicket, setInspectingTicket] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const confirmDialog = useConfirmDialog();
   const [apiTickets, setApiTickets] = useState(null);
   const [apiActive, setApiActive] = useState(false);
   const [apiChecked, setApiChecked] = useState(false);
@@ -364,12 +367,52 @@ export function MatchReviewView({
   ).length;
 
   // Actions
-  const handleDeleteTicket = (ticketId) => {
-    if (displayTickets.find((t) => t.id === ticketId)?._source === 'api') {
-      showToast('Laporan live dari backend tidak dapat dihapus dari halaman ini.', 'info');
+  const hasActiveMatch = (ticket) => {
+    if (!ticket || ticket._apiId == null) return false;
+    return (Array.isArray(apiMatchesRaw) ? apiMatchesRaw : []).some(
+      (m) =>
+        String(m.status || '').toLowerCase() !== 'rejected' &&
+        (String(m.lost_report_id) === String(ticket._apiId) ||
+          String(m.found_report_id) === String(ticket._apiId))
+    );
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    const ticket = displayTickets.find((t) => t.id === ticketId);
+    if (!ticket) return;
+
+    // Laporan live dari backend → hapus permanen via API (tidak di-block lagi).
+    if (ticket._source === 'api' && ticket._apiId != null) {
+      if (hasActiveMatch(ticket)) {
+        showToast(
+          `Laporan ${ticket.id} punya pasangan aktif. Lepas relasinya (tombol "Lepas Relasi / Tidak Cocok") dulu sebelum menghapus.`,
+          'info'
+        );
+        return;
+      }
+      const ok = await confirmDialog.confirm({
+        title: 'Hapus Laporan?',
+        message: `Laporan ${ticket.id} akan dihapus permanen dari backend. Tindakan tidak dapat dibatalkan.`,
+      });
+      if (!ok) return;
+      setActionLoading(true);
+      try {
+        await ApiService.deleteReport(ticket._apiId);
+        showToast(`Laporan ${ticket.id} berhasil dihapus dari backend.`, 'success');
+      } catch (err) {
+        showToast(`Gagal menghapus laporan: ${err.message}`, 'info');
+      } finally {
+        setActionLoading(false);
+        refreshData();
+        await loadApiTickets();
+      }
       return;
     }
-    if (window.confirm(`Hapus laporan barang ${ticketId}?`)) {
+
+    if (await confirmDialog.confirm({
+        title: 'Hapus Laporan?',
+        message: `Hapus laporan barang ${ticketId}? Tindakan ini tidak dapat dibatalkan dan data akan dihapus permanen.`,
+      })) {
       StorageService.deleteTicket(ticketId);
       showToast(`Laporan barang ${ticketId} berhasil dihapus.`, 'info');
       refreshData();
@@ -1189,6 +1232,9 @@ export function MatchReviewView({
         onMessageChange={handleWhatsAppMessageChange}
         onSend={handleConfirmWhatsAppSend}
       />
+
+      {/* Confirm Dialog (pengganti window.confirm) */}
+      {confirmDialog.dialog && <ConfirmDialog {...confirmDialog.dialog} />}
 
       {/* Toast Notification */}
       {toastNotification && (
