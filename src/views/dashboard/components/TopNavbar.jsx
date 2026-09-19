@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Search, 
   Bell, 
@@ -9,7 +9,6 @@ import {
   Ticket, 
   Package, 
   MessageSquareHeart,
-  CheckCircle2,
   Inbox
 } from 'lucide-react';
 import { StorageService } from '../../../services/StorageService';
@@ -280,11 +279,11 @@ export function TopNavbar({
               className="profile-item-btn"
               onClick={() => {
                 setIsProfileOpen(false);
-                if (onNavChange) onNavChange('Kelola Admin');
+                if (onNavChange) onNavChange('Kelola Pekerja');
               }}
             >
               <Users size={15} />
-              <span>Kelola Administrator</span>
+              <span>Kelola Pekerja &amp; Attendant</span>
             </button>
 
             <button

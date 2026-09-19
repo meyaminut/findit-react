@@ -372,6 +372,64 @@ export function mapLocalToApiReport(localItem, type = 'found') {
   };
 }
 
+// ──────────────────────────── WORKERS (ROOM ATTENDANT) ────────────────────────────
+const normalizeWorker = (u) => {
+  if (!u || typeof u !== 'object') return null;
+  return {
+    id: u.id ?? u.ID ?? null,
+    name: u.name || u.Name || 'Tanpa Nama',
+    email: u.email || u.Email || '',
+    phone: u.phone || u.Phone || '',
+    role: u.role || u.Role || 'user',
+    createdAt: u.created_at || u.CreatedAt || null,
+  };
+};
+
+/**
+ * List semua pekerja/room attendant (non-admin). Error dari server dilempar
+ * agar controller bisa menampilkan pesan asli (bukan diam-diam kosong).
+ */
+export async function getWorkers() {
+  const data = await apiClient.get('/users/list');
+  const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+  return list.map(normalizeWorker).filter(Boolean);
+}
+
+/**
+ * Buat pekerja baru via POST /register (kontrak lowercase, sama dengan struct Go).
+ * Password default 'findit123' — ditampilkan sekali oleh UI.
+ */
+export async function createWorker({ name, email, phone = '', role = 'worker', password = 'findit123' }) {
+  const data = await apiClient.post('/register', {
+    name,
+    email,
+    phone,
+    password,
+    role,
+  });
+  const created = data?.data || data;
+  return normalizeWorker(created) || created;
+}
+
+export async function updateWorker(id, { name, email, phone = '', role = 'worker', password = '' }) {
+  const payload = {
+    name,
+    email,
+    phone,
+    role,
+  };
+  if (password) payload.password = password;
+
+  const data = await apiClient.put(`/users/${id}`, payload);
+  const updated = data?.data || data;
+  return normalizeWorker(updated) || updated;
+}
+
+export async function deleteWorker(id) {
+  const data = await apiClient.delete(`/users/${id}`);
+  return data;
+}
+
 // ──────────────────────────── DEFAULT EXPORT ────────────────────────────
 const ApiService = {
   checkHealth,
@@ -399,6 +457,10 @@ const ApiService = {
   fetchAllData,
   mapApiReportToLocal,
   mapLocalToApiReport,
+  getWorkers,
+  createWorker,
+  updateWorker,
+  deleteWorker,
 };
 
 export default ApiService;

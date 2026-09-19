@@ -1,73 +1,98 @@
-import React, { useState } from 'react';
-import { 
-  Shield, 
-  ShieldCheck, 
-  UserPlus, 
-  Info, 
-  Users, 
-  Activity, 
-  MoreVertical, 
-  ChevronLeft, 
-  ChevronRight, 
-  Search, 
-  Bell, 
-  ChevronDown, 
-  Check, 
-  X, 
-  CheckCircle2, 
-  AlertTriangle,
+import {
+  Shield,
+  ShieldCheck,
+  UserPlus,
+  Info,
+  Users,
   Lock,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Bell,
+  ChevronDown,
+  X,
+  CheckCircle2,
+  AlertTriangle,
   Mail,
-  User
+  Phone,
+  User,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import Sidebar from '../dashboard/components/Sidebar';
-import useAdminManagementController from '../../controllers/useAdminManagementController';
+import useAdminManagementController, {
+  WORKER_DEFAULT_PASSWORD
+} from '../../controllers/useAdminManagementController';
+import ApiService from '../../services/ApiService';
 import './ManageAdminsView.css';
+
+const ROLE_LABELS = {
+  worker: 'Room Attendant',
+  user: 'User / Tamu',
+  admin: 'Admin'
+};
+
+const formatDate = (value) => {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
+const initials = (name = '') => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+};
 
 /**
  * View Component: ManageAdminsView
- * Pixel-perfect implementation of the clean, anti-AI "Manage Admins" operational console.
- * Features crisp 1px borders, high-contrast typography, and official Find!t brand palette.
+ * Kelola Pekerja / Room Attendant — CRUD via API langsung ke backend.
  */
 export function ManageAdminsView({
-  activeNav = 'Kelola Admin',
+  activeNav = 'Kelola Pekerja',
   onNavChange,
   onLogout
 }) {
   const {
-    admins,
+    workers,
     totalCount,
     activeCount,
+    loading,
+    saving,
     filterTab,
     setFilterTab,
     searchQuery,
     setSearchQuery,
-    isAddModalOpen,
+    modalMode,
+    editing,
     handleOpenAddModal,
-    handleCloseAddModal,
+    handleOpenEditModal,
+    handleCloseModal,
     formData,
     handleFormChange,
     handleFormSubmit,
-    handleToggleStatus,
-    handleDeleteAdmin,
+    handleDeleteWorker,
     protocol,
-    metrics,
     toastNotification
   } = useAdminManagementController();
 
-  const [activeActionMenuId, setActiveActionMenuId] = useState(null);
-
-  const toggleActionMenu = (id, e) => {
-    e.stopPropagation();
-    setActiveActionMenuId((prev) => (prev === id ? null : id));
+  const readCurrentUser = () => {
+    try {
+      return ApiService.getCurrentUser() || {};
+    } catch {
+      return {};
+    }
   };
+  const currentUser = readCurrentUser();
 
-  const closeActionMenu = () => {
-    setActiveActionMenuId(null);
-  };
+  const isGuestDirectory = (w) => Boolean(w && (w.role === 'user' || w.role === 'admin'));
 
   return (
-    <div className="manage-admins-layout" onClick={closeActionMenu}>
+    <div className="manage-admins-layout">
       {/* 1. Left Sidebar Navigation (Dark Navy) */}
       <Sidebar
         activeNav={activeNav}
@@ -84,14 +109,14 @@ export function ManageAdminsView({
             <input
               type="text"
               className="clean-search-input"
-              placeholder="Press / or search reports, items, ID..."
+              placeholder="Cari nama, email, atau tipe akun..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           <div className="clean-nav-right">
-            <button type="button" className="clean-bell-btn" title="3 Notifikasi">
+            <button type="button" className="clean-bell-btn" title="Notifikasi">
               <Bell size={17} />
               <span className="clean-bell-badge">3</span>
             </button>
@@ -99,14 +124,14 @@ export function ManageAdminsView({
             <div className="clean-nav-divider" />
 
             <div className="clean-user-profile">
-              <img
-                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
-                alt="Sarah Jenkins"
-                className="clean-user-avatar"
-              />
+              <div className="clean-user-avatar clean-user-avatar-initials">
+                {initials(currentUser.name)}
+              </div>
               <div className="clean-user-text">
-                <span className="clean-user-name">Sarah Jenkins</span>
-                <span className="clean-user-role">Senior Operations Admin</span>
+                <span className="clean-user-name">
+                  {currentUser.name || 'Administrator'}
+                </span>
+                <span className="clean-user-role">Admin FindIt</span>
               </div>
               <ChevronDown size={15} className="clean-chevron-down" />
             </div>
@@ -119,18 +144,18 @@ export function ManageAdminsView({
           <div className="admin-page-header">
             <div className="admin-title-group">
               <div className="admin-heading-row">
-                <h1 className="admin-main-title">Manage Admins</h1>
-                <span className="admin-active-pill">{activeCount} Active</span>
+                <h1 className="admin-main-title">Kelola Pekerja</h1>
+                <span className="admin-active-pill">{activeCount} Room Attendant</span>
               </div>
               <p className="admin-subtitle">
-                Manage operational staff and system administrators
+                Kelola staf operasional &amp; room attendant — perubahan langsung tersimpan ke server
               </p>
             </div>
 
             <div className="admin-header-actions">
               <div className="system-policy-badge">
                 <ShieldCheck size={14} className="policy-icon" />
-                <span>System Policy: {protocol.policyVersion}</span>
+                <span>{protocol.policyVersion}</span>
               </div>
 
               <button
@@ -139,12 +164,12 @@ export function ManageAdminsView({
                 onClick={handleOpenAddModal}
               >
                 <UserPlus size={16} />
-                <span>+ Add Admin</span>
+                <span>Tambah Pekerja</span>
               </button>
             </div>
           </div>
 
-          {/* Equal Privilege Access Protocol Banner */}
+          {/* Access Protocol Banner */}
           <div className="access-protocol-banner">
             <div className="protocol-icon-box">
               <Info size={18} />
@@ -157,13 +182,13 @@ export function ManageAdminsView({
 
           {/* 3 Metric Summary Cards */}
           <div className="admin-metrics-grid">
-            {/* Card 1: Authorized Seats */}
+            {/* Card 1: Total Pekerja */}
             <div className="clean-metric-card">
               <div className="metric-info-col">
-                <span className="metric-label">Authorized Seats</span>
+                <span className="metric-label">Total Pekerja</span>
                 <div className="metric-value-row">
-                  <span className="metric-bold-value">{metrics.authorizedSeats.activeCount}</span>
-                  <span className="metric-sub-value">/ {metrics.authorizedSeats.totalAllocated} allocated</span>
+                  <span className="metric-bold-value">{loading ? '—' : totalCount}</span>
+                  <span className="metric-sub-value">terdaftar di sistem</span>
                 </div>
               </div>
               <div className="metric-icon-square blue">
@@ -171,30 +196,30 @@ export function ManageAdminsView({
               </div>
             </div>
 
-            {/* Card 2: Recent Activity (24h) */}
+            {/* Card 2: Room Attendant Aktif */}
             <div className="clean-metric-card">
               <div className="metric-info-col">
-                <span className="metric-label">Recent Activity (24h)</span>
+                <span className="metric-label">Room Attendant</span>
                 <div className="metric-value-row">
-                  <span className="metric-bold-value">{metrics.recentActivity.activeCount}</span>
-                  <span className="metric-bold-unit">{metrics.recentActivity.unit}</span>
+                  <span className="metric-bold-value">{loading ? '—' : activeCount}</span>
+                  <span className="metric-bold-unit">akun worker</span>
                 </div>
               </div>
               <div className="metric-icon-square amber">
-                <Activity size={18} />
+                <Shield size={18} />
               </div>
             </div>
 
-            {/* Card 3: Security Enforcement */}
+            {/* Card 3: Kebijakan Akses */}
             <div className="clean-metric-card">
               <div className="metric-info-col">
-                <span className="metric-label">Security Enforcement</span>
+                <span className="metric-label">Role Diizinkan</span>
                 <div className="metric-value-row">
-                  <span className="metric-bold-value">{metrics.securityEnforcement.status}</span>
+                  <span className="metric-bold-value">worker</span>
                 </div>
               </div>
               <div className="metric-icon-square soft-blue">
-                <Shield size={18} />
+                <Lock size={18} />
               </div>
             </div>
           </div>
@@ -202,25 +227,25 @@ export function ManageAdminsView({
           {/* Filter Directory Bar */}
           <div className="filter-directory-bar">
             <div className="filter-tabs-group">
-              <span className="filter-directory-label">Filter Directory:</span>
+              <span className="filter-directory-label">Filter:</span>
               <button
                 type="button"
                 className={`directory-tab ${filterTab === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterTab('all')}
               >
-                All ({totalCount})
+                Semua ({totalCount})
               </button>
               <button
                 type="button"
                 className={`directory-tab ${filterTab === 'active' ? 'active' : ''}`}
                 onClick={() => setFilterTab('active')}
               >
-                Active Only
+                Worker Only ({activeCount})
               </button>
             </div>
 
             <span className="showing-accounts-meta">
-              Showing all operational accounts
+              Menampilkan semua akun pekerja &amp; terkait
             </span>
           </div>
 
@@ -229,124 +254,111 @@ export function ManageAdminsView({
             <table className="clean-admin-table">
               <thead>
                 <tr>
-                  <th style={{ width: '260px' }}>NAME &amp; AVATAR</th>
-                  <th style={{ width: '220px' }}>WORK EMAIL</th>
-                  <th style={{ width: '150px' }}>DATE ADDED</th>
-                  <th style={{ width: '150px' }}>LAST ACTIVE</th>
-                  <th style={{ width: '130px' }}>STATUS</th>
-                  <th style={{ width: '150px', textAlign: 'right' }}>ACTIONS</th>
+                  <th style={{ width: '240px' }}>NAMA</th>
+                  <th style={{ width: '240px' }}>KONTAK</th>
+                  <th style={{ width: '160px' }}>TIPE AKUN</th>
+                  <th style={{ width: '140px' }}>DIBUAT</th>
+                  <th style={{ width: '160px', textAlign: 'right' }}>AKSI</th>
                 </tr>
               </thead>
               <tbody>
-                {admins.map((admin) => (
-                  <tr key={admin.id} className="clean-table-row">
-                    {/* 1. Name & Avatar */}
-                    <td className="cell-user-identity">
-                      <div className="identity-flex">
-                        <div className="avatar-wrapper">
-                          <img
-                            src={admin.avatar}
-                            alt={admin.name}
-                            className="admin-avatar-img"
-                          />
-                          <span className={`status-indicator-dot ${admin.status}`} />
-                        </div>
-                        <div className="identity-text">
-                          <div className="name-badge-row">
-                            <span className="admin-row-name">{admin.name}</span>
-                            {admin.isCurrentUser && (
-                              <span className="badge-you-pill">YOU</span>
-                            )}
-                          </div>
-                          <span className="admin-row-role">{admin.role}</span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* 2. Work Email */}
-                    <td className="cell-email">
-                      <span className="admin-email-text">{admin.email}</span>
-                    </td>
-
-                    {/* 3. Date Added */}
-                    <td className="cell-date">
-                      <span className="admin-date-text">{admin.dateAdded}</span>
-                    </td>
-
-                    {/* 4. Last Active */}
-                    <td className="cell-last-active">
-                      <div className="last-active-flex">
-                        {admin.lastActive === 'Just now' && (
-                          <span className="amber-pulse-dot" />
-                        )}
-                        <span className={`last-active-text ${admin.lastActive === 'Just now' ? 'now' : ''}`}>
-                          {admin.lastActive}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* 5. Status */}
-                    <td className="cell-status">
-                      <span className={`clean-status-pill ${admin.status}`}>
-                        <span className="status-pill-dot" />
-                        {admin.status === 'active' ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-
-                    {/* 6. Actions */}
-                    <td className="cell-actions">
-                      {admin.isCurrentUser ? (
-                        <span className="current-session-label">Current Session</span>
-                      ) : (
-                        <div className="action-menu-relative">
-                          <button
-                            type="button"
-                            className="btn-dots-menu"
-                            onClick={(e) => toggleActionMenu(admin.id, e)}
-                            title="Aksi Akun"
-                          >
-                            <MoreVertical size={16} />
-                          </button>
-
-                          {activeActionMenuId === admin.id && (
-                            <div
-                              className="action-dropdown-popover"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                type="button"
-                                className="dropdown-item"
-                                onClick={() => {
-                                  handleToggleStatus(admin.id);
-                                  closeActionMenu();
-                                }}
-                              >
-                                {admin.status === 'active' ? 'Nonaktifkan Akun' : 'Aktifkan Akun'}
-                              </button>
-                              <button
-                                type="button"
-                                className="dropdown-item danger"
-                                onClick={() => {
-                                  handleDeleteAdmin(admin.id);
-                                  closeActionMenu();
-                                }}
-                              >
-                                Hapus Akses Admin
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                {loading && (
+                  <tr>
+                    <td colSpan="5" className="admin-table-empty">
+                      <span className="admin-loading-spinner" />
+                      <span className="admin-empty-text">Memuat data pekerja dari server...</span>
                     </td>
                   </tr>
-                ))}
+                )}
+
+                {!loading && workers.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="admin-table-empty">
+                      <span className="admin-empty-icon">👋</span>
+                      <span className="admin-empty-text">
+                        Belum ada pekerja. Klik &quot;Tambah Pekerja&quot; untuk membuat akun pertama.
+                      </span>
+                    </td>
+                  </tr>
+                )}
+
+                {!loading &&
+                  workers.map((worker) => (
+                    <tr key={worker.id} className="clean-table-row">
+                      {/* 1. Name & Avatar */}
+                      <td className="cell-user-identity">
+                        <div className="identity-flex">
+                          <div className="avatar-wrapper">
+                            <div className="admin-avatar-initials">{initials(worker.name)}</div>
+                            <span className="status-indicator-dot active" />
+                          </div>
+                          <div className="identity-text">
+                            <div className="name-badge-row">
+                              <span className="admin-row-name">{worker.name}</span>
+                            </div>
+                            <span className="admin-row-role">
+                              {ROLE_LABELS[worker.role] || worker.role || 'User'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* 2. Contact */}
+                      <td className="cell-email">
+                        <span className="admin-email-text">{worker.email || '—'}</span>
+                        {worker.phone && (
+                          <span className="admin-phone-text">{worker.phone}</span>
+                        )}
+                      </td>
+
+                      {/* 3. Role */}
+                      <td className="cell-status">
+                        <span className={`clean-status-pill ${isGuestDirectory(worker) ? 'inactive' : 'active'}`}>
+                          <span className="status-pill-dot" />
+                          {worker.role === 'worker' ? 'Worker' : worker.role || 'User'}
+                        </span>
+                      </td>
+
+                      {/* 4. Created */}
+                      <td className="cell-date">
+                        <span className="admin-date-text">{formatDate(worker.createdAt)}</span>
+                      </td>
+
+                      {/* 5. Actions */}
+                      <td className="cell-actions">
+                        <div className="worker-actions-row">
+                          <button
+                            type="button"
+                            className="btn-edit-action"
+                            onClick={() => handleOpenEditModal(worker)}
+                            title="Edit pekerja"
+                          >
+                            <Pencil size={14} />
+                            Edit
+                          </button>
+                          {worker.role !== 'admin' && (
+                            <button
+                              type="button"
+                              className="btn-delete-action"
+                              onClick={() => handleDeleteWorker(worker.id)}
+                              disabled={saving}
+                              title="Hapus pekerja"
+                            >
+                              <Trash2 size={14} />
+                              Hapus
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
 
             {/* Table Pagination Footer */}
             <div className="admin-table-footer">
               <span className="footer-meta-count">
-                Showing 1–{admins.length} of {totalCount} accounts
+                Showing 1–{workers.length} of {totalCount} accounts
               </span>
 
               <div className="clean-pagination">
@@ -365,19 +377,25 @@ export function ManageAdminsView({
         </main>
       </div>
 
-      {/* Add Admin Modal */}
-      {isAddModalOpen && (
-        <div className="admin-modal-backdrop" onClick={handleCloseAddModal}>
+      {/* Add / Edit Worker Modal */}
+      {modalMode && (
+        <div className="admin-modal-backdrop" onClick={handleCloseModal}>
           <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-header">
               <div className="modal-title-wrap">
-                <h3 className="modal-title">+ Add Operational Administrator</h3>
-                <p className="modal-sub">Undang staf operasional baru dengan hak akses penuh sesuai protokol RBAC.</p>
+                <h3 className="modal-title">
+                  {modalMode === 'edit' ? `Edit ${editing?.name || 'Pekerja'}` : 'Tambah Pekerja'}
+                </h3>
+                <p className="modal-sub">
+                  {modalMode === 'edit'
+                    ? 'Perbarui data akun pekerja — perubahan langsung tersimpan ke server.'
+                    : `Buat akun pekerja baru. Password awal otomatis: ${WORKER_DEFAULT_PASSWORD}`}
+                </p>
               </div>
               <button
                 type="button"
                 className="btn-modal-close"
-                onClick={handleCloseAddModal}
+                onClick={handleCloseModal}
               >
                 <X size={18} />
               </button>
@@ -400,13 +418,13 @@ export function ManageAdminsView({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Email Kerja (@findit.internal) *</label>
+                <label className="form-label">Email *</label>
                 <div className="input-with-icon">
                   <Mail size={15} className="input-icon" />
                   <input
                     type="email"
                     className="form-input"
-                    placeholder="maya.p@findit.internal"
+                    placeholder="contoh@findit.id"
                     value={formData.email}
                     onChange={(e) => handleFormChange('email', e.target.value)}
                     required
@@ -415,25 +433,63 @@ export function ManageAdminsView({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Peran / Jabatan Operasional *</label>
+                <label className="form-label">No. HP (opsional)</label>
+                <div className="input-with-icon">
+                  <Phone size={15} className="input-icon" />
+                  <input
+                    type="tel"
+                    className="form-input"
+                    placeholder="08xxxxxxxxxx"
+                    value={formData.phone}
+                    onChange={(e) => handleFormChange('phone', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Tipe Akun *</label>
                 <select
                   className="form-select"
                   value={formData.role}
                   onChange={(e) => handleFormChange('role', e.target.value)}
                 >
-                  <option value="Operations Specialist">Operations Specialist</option>
-                  <option value="Intake Supervisor">Intake Supervisor</option>
-                  <option value="Match Verification Lead">Match Verification Lead</option>
-                  <option value="Auditor & Catalog Lead">Auditor &amp; Catalog Lead</option>
-                  <option value="Front Office Supervisor">Front Office Supervisor</option>
+                  <option value="worker">Room Attendant (worker)</option>
+                  <option value="user">User / Tamu (user)</option>
                 </select>
               </div>
+
+              {modalMode === 'edit' && (
+                <div className="form-group">
+                  <label className="form-label">Password Baru (opsional)</label>
+                  <div className="input-with-icon">
+                    <Lock size={15} className="input-icon" />
+                    <input
+                      type="password"
+                      className="form-input"
+                      placeholder="Kosongkan jika tidak diubah (min. 6 karakter)"
+                      value={formData.password}
+                      onChange={(e) => handleFormChange('password', e.target.value)}
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="security-notice-box">
                 <Lock size={16} className="security-lock-icon" />
                 <div className="security-notice-text">
-                  <span className="notice-bold">MFA &amp; Single Sign-On Enforced</span>
-                  <span className="notice-sub">Tautan aktivasi akun dan pendaftaran OTP autentikator akan dikirim otomatis ke email internal.</span>
+                  <span className="notice-bold">
+                    {modalMode === 'edit'
+                      ? formData.password
+                        ? 'Password akan di-reset'
+                        : 'Password tidak diubah'
+                      : `Password awal otomatis: ${WORKER_DEFAULT_PASSWORD}`}
+                  </span>
+                  <span className="notice-sub">
+                    {modalMode === 'edit'
+                      ? 'Isi kolom password di atas untuk mengganti password pekerja.'
+                      : 'Pekerja dapat mengganti password setelah login pertama.'}
+                  </span>
                 </div>
               </div>
 
@@ -441,12 +497,16 @@ export function ManageAdminsView({
                 <button
                   type="button"
                   className="btn-cancel-flat"
-                  onClick={handleCloseAddModal}
+                  onClick={handleCloseModal}
                 >
                   Batal
                 </button>
-                <button type="submit" className="btn-save-amber">
-                  Kirim Undangan Akses Admin
+                <button type="submit" className="btn-save-amber" disabled={saving}>
+                  {saving
+                    ? 'Menyimpan...'
+                    : modalMode === 'edit'
+                    ? 'Simpan Perubahan'
+                    : 'Simpan Pekerja'}
                 </button>
               </div>
             </form>

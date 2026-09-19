@@ -1,143 +1,235 @@
-import { useState, useMemo } from 'react';
-import { INITIAL_ADMINS, ACCESS_PROTOCOL, ADMIN_METRICS } from '../models/AdminManagementModel';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import ApiService from '../services/ApiService';
+import { ACCESS_PROTOCOL } from '../models/AdminManagementModel';
+
+export const WORKER_DEFAULT_PASSWORD = 'findit123';
 
 /**
  * Controller Hook: useAdminManagementController
- * Manages administrative state, filtering, modal dialogs, and account actions.
+ * Kelola Pekerja / Room Attendant — API-first (langsung ke backend, tanpa data fiktif).
+ * Operasi: list (GET /users/list), create (POST /register), update (PUT /users/:id),
+ * delete (DELETE /users/:id). Error server ditampilkan apa adanya lewat toast.
  */
 export function useAdminManagementController() {
-  const [admins, setAdmins] = useState(INITIAL_ADMINS);
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [filterTab, setFilterTab] = useState('all'); // 'all' | 'active'
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState(null); // 'add' | 'edit' | null
+  const [editing, setEditing] = useState(null);
   const [toastNotification, setToastNotification] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
-    role: 'Operations Specialist',
+    role: 'worker',
     email: '',
-    mfaEnabled: true
+    phone: '',
+    password: ''
   });
 
-  const showToast = (message, type = 'success') => {
-    setToastNotification({ message, type });
-    setTimeout(() => {
-      setToastNotification(null);
-    }, 3500);
-  };
+  const showToast = useCallback((message, type = 'success') => {
+    setToastNotification({ message, type, id: Date.now() });
+    setTimeout(() => setToastNotification(null), 4000);
+  }, []);
 
-  // Filtered accounts based on search query and active tab
-  const filteredAdmins = useMemo(() => {
-    return admins.filter((admin) => {
-      const matchesTab = filterTab === 'all' || admin.status === 'active';
+  const getErrorMessage = useCallback((err) => {
+    if (!err) return 'Terjadi kesalahan tak terduga.';
+    if (err.status === 401) return 'Sesi berakhir. Silakan masuk kembali.';
+    if (err.status === 403) return 'Anda tidak memiliki izin untuk operasi ini.';
+    if (err.status === 409) return err.message || 'Data tersebut sudah ada / tidak dapat dihapus.';
+    return err.message || `Server menolak permintaan (HTTP ${err.status || '?'}).`;
+  }, []);
+
+  const loadWorkers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await ApiService.getWorkers();
+      setWorkers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.warn('[useAdminManagementController] loadWorkers failed:', err);
+      setWorkers([]);
+      showToast('Gagal memuat data pekerja: ' + getErrorMessage(err), 'warning');
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast, getErrorMessage]);
+
+  // Muat data saat mount — setState dipanggil di dalam callback async (setelah
+  // await), bukan sinkron di dalam body effect.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await ApiService.getWorkers();
+        if (cancelled) return;
+        setWorkers(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (cancelled) return;
+        console.warn('[useAdminManagementController] loadWorkers failed:', err);
+        setWorkers([]);
+        showToast('Gagal memuat data pekerja: ' + getErrorMessage(err), 'warning');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast, getErrorMessage]);
+
+  const filteredWorkers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return workers.filter((w) => {
+      const matchesTab = filterTab === 'all' || (filterTab === 'active' && w.role === 'worker');
       const matchesSearch =
-        admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        admin.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        admin.role.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        (w.name || '').toLowerCase().includes(q) ||
+        (w.email || '').toLowerCase().includes(q) ||
+        (w.role || '').toLowerCase().includes(q);
       return matchesTab && matchesSearch;
     });
-  }, [admins, filterTab, searchQuery]);
+  }, [workers, filterTab, searchQuery]);
 
-  const activeCount = useMemo(() => {
-    return admins.filter((a) => a.status === 'active').length;
-  }, [admins]);
+  const totalCount = workers.length;
+  const activeCount = useMemo(
+    () => workers.filter((w) => w.role === 'worker').length,
+    [workers]
+  );
 
-  const handleFormChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value
-    }));
+  const resetFormData = () => {
+    setFormData({ name: '', role: 'worker', email: '', phone: '', password: '' });
   };
 
   const handleOpenAddModal = () => {
+    resetFormData();
+    setEditing(null);
+    setModalMode('add');
+  };
+
+  const handleOpenEditModal = (worker) => {
     setFormData({
-      name: '',
-      role: 'Operations Specialist',
-      email: '',
-      mfaEnabled: true
+      name: worker.name || '',
+      role: worker.role === 'user' ? 'user' : 'worker',
+      email: worker.email || '',
+      phone: worker.phone || '',
+      password: ''
     });
-    setIsAddModalOpen(true);
+    setEditing(worker);
+    setModalMode('edit');
   };
 
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
+  const handleCloseModal = () => {
+    if (saving) return;
+    setModalMode(null);
+    setEditing(null);
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFormSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (saving) return;
 
-    if (!formData.name.trim() || !formData.email.trim()) {
-      showToast('Mohon isi nama lengkap dan email admin.', 'warning');
+    if (!formData.name.trim()) {
+      showToast('Mohon isi nama lengkap pekerja.', 'warning');
+      return;
+    }
+    if (!formData.email.trim()) {
+      showToast('Mohon isi email kerja pekerja.', 'warning');
+      return;
+    }
+    if (
+      modalMode === 'edit' &&
+      formData.password.trim() &&
+      formData.password.trim().length < 6
+    ) {
+      showToast('Password baru minimal 6 karakter.', 'warning');
       return;
     }
 
-    const newAdmin = {
-      id: `adm-${Date.now().toString().slice(-4)}`,
-      name: formData.name.trim(),
-      role: formData.role,
-      email: formData.email.trim().toLowerCase(),
-      dateAdded: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-      lastActive: 'Baru ditambahkan',
-      status: 'active',
-      isCurrentUser: false,
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'
-    };
-
-    setAdmins((prev) => [newAdmin, ...prev]);
-    setIsAddModalOpen(false);
-    showToast(`Akun administrator ${newAdmin.name} berhasil ditambahkan.`);
+    setSaving(true);
+    try {
+      if (modalMode === 'edit' && editing?.id) {
+        const updated = await ApiService.updateWorker(editing.id, {
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          role: formData.role,
+          password: formData.password.trim()
+        });
+        showToast(
+          `Pekerja ${updated?.name || formData.name.trim()} berhasil diperbarui${
+            formData.password.trim() ? ' (termasuk password baru)' : ''
+          }.`
+        );
+      } else {
+        const created = await ApiService.createWorker({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          role: formData.role
+        });
+        showToast(
+          `Pekerja ${created?.name || formData.name.trim()} ditambahkan. Password awal: ${WORKER_DEFAULT_PASSWORD}`
+        );
+      }
+      setModalMode(null);
+      setEditing(null);
+      await loadWorkers();
+    } catch (err) {
+      showToast('Gagal menyimpan pekerja: ' + getErrorMessage(err), 'warning');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleToggleStatus = (adminId) => {
-    setAdmins((prev) =>
-      prev.map((a) => {
-        if (a.id === adminId) {
-          if (a.isCurrentUser) {
-            showToast('Sesi aktif administrator saat ini tidak dapat dinonaktifkan.', 'warning');
-            return a;
-          }
-          const nextStatus = a.status === 'active' ? 'inactive' : 'active';
-          showToast(`Status akun ${a.name} diubah menjadi ${nextStatus}.`);
-          return { ...a, status: nextStatus };
-        }
-        return a;
-      })
+  const handleDeleteWorker = async (workerId) => {
+    const target = workers.find((w) => String(w.id) === String(workerId));
+    const ok = window.confirm(
+      `Hapus pekerja ${target?.name || 'ini'}? Tindakan ini menghapus akun dari sistem.`
     );
-  };
+    if (!ok) return;
 
-  const handleDeleteAdmin = (adminId) => {
-    const target = admins.find((a) => a.id === adminId);
-    if (target?.isCurrentUser) {
-      showToast('Tidak dapat menghapus sesi administrator Anda sendiri.', 'warning');
-      return;
+    try {
+      setSaving(true);
+      await ApiService.deleteWorker(workerId);
+      showToast(`Pekerja ${target?.name || ''} telah dihapus.`);
+      await loadWorkers();
+    } catch (err) {
+      showToast('Gagal menghapus pekerja: ' + getErrorMessage(err), 'warning');
+    } finally {
+      setSaving(false);
     }
-    setAdmins((prev) => prev.filter((a) => a.id !== adminId));
-    showToast(`Akun administrator ${target?.name || ''} telah dinonaktifkan.`);
   };
 
   return {
-    admins: filteredAdmins,
-    totalCount: admins.length,
+    workers: filteredWorkers,
+    totalCount,
     activeCount,
+    loading,
+    saving,
     filterTab,
     setFilterTab,
     searchQuery,
     setSearchQuery,
-    isAddModalOpen,
+    modalMode,
+    editing,
     handleOpenAddModal,
-    handleCloseAddModal,
+    handleOpenEditModal,
+    handleCloseModal,
     formData,
     handleFormChange,
     handleFormSubmit,
-    handleToggleStatus,
-    handleDeleteAdmin,
-    protocol: ACCESS_PROTOCOL,
-    metrics: {
-      ...ADMIN_METRICS,
-      authorizedSeats: {
-        activeCount,
-        totalAllocated: ADMIN_METRICS.authorizedSeats.totalAllocated
-      }
+    handleDeleteWorker,
+    protocol: {
+      ...ACCESS_PROTOCOL,
+      title: 'KEBIJAKAN AKSES PEKERJA',
+      description:
+        'Pekerja/room attendant membantu pelaporan barang temuan dan verifikasi klaim. Kelola akun pekerja dari halaman ini — perubahan langsung tersimpan ke server.',
+      policyVersion: 'Worker RBAC v1.0'
     },
     toastNotification
   };

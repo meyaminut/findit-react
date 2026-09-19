@@ -188,6 +188,7 @@ function resolveNavPath(navId) {
   }
   if (
     navId === 'Kelola Admin' ||
+    navId === 'Kelola Pekerja' ||
     navId === 'admin-management' ||
     navId === 'Admin Management'
   ) {
@@ -275,7 +276,7 @@ function AdminShell() {
   } else if (current === 'kelola-admin') {
     content = (
       <ManageAdminsView
-        activeNav="Kelola Admin"
+        activeNav="Kelola Pekerja"
         onNavChange={handleNavChange}
         onLogout={handleLogout}
       />
