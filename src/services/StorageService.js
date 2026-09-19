@@ -21,15 +21,40 @@ const MATCHES_KEY = 'findit_matches';
 const OPERATIONAL_REPORTS_KEY = 'findit_operational_reports';
 
 // Auto-cleanup legacy dummy data from localStorage once so browser is pristine
+function isApiSourced(entry) {
+  return Boolean(entry && (entry._source === 'api' || entry._apiId != null));
+}
+
+// Hapus entri lokal ber-ID placeholder (#TK-/#LF-/#M-/#LAP-/#SURV-...) yang
+// TIDAK bersumber dari API. Ini membersihkan tiket #TK-2024 bekas fallback
+// lama (bug "laporan masuk lokal, bukan API") tanpa menyentuh data API.
+function purgeLocalPlaceholderEntries(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const list = JSON.parse(raw);
+    if (!Array.isArray(list) || list.length === 0) return;
+    const kept = list.filter((entry) => {
+      const id = String(entry?.id || '');
+      if (!id || isApiSourced(entry)) return true;
+      return !/^#(?:TK|LF|M|LAP|SURV)-/i.test(id);
+    });
+    if (kept.length !== list.length) {
+      localStorage.setItem(key, JSON.stringify(kept));
+    }
+  } catch {
+    // Data rusak/tidak terbaca — biarkan apa adanya.
+  }
+}
+
 if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-  const DUMMY_CLEANUP_KEY = 'findit_dummy_cleaned_v5';
+  const DUMMY_CLEANUP_KEY = 'findit_dummy_cleaned_v6';
   if (!localStorage.getItem(DUMMY_CLEANUP_KEY)) {
-    localStorage.removeItem(TICKETS_KEY);
-    localStorage.removeItem(FOUND_ITEMS_KEY);
-    localStorage.removeItem(MATCHES_KEY);
-    localStorage.removeItem(AUDIT_LOGS_KEY);
-    localStorage.removeItem(SURVEY_GUESTS_KEY);
-    localStorage.removeItem(OPERATIONAL_REPORTS_KEY);
+    purgeLocalPlaceholderEntries(TICKETS_KEY);
+    purgeLocalPlaceholderEntries(FOUND_ITEMS_KEY);
+    purgeLocalPlaceholderEntries(MATCHES_KEY);
+    purgeLocalPlaceholderEntries(SURVEY_GUESTS_KEY);
+    purgeLocalPlaceholderEntries(OPERATIONAL_REPORTS_KEY);
     localStorage.setItem(DUMMY_CLEANUP_KEY, 'true');
   }
 }

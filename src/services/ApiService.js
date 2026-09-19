@@ -140,6 +140,19 @@ export async function getReportById(id) {
   }
 }
 
+/**
+ * Konversi tanggal apa pun (Date instance, tanggal "2026-09-19", dsb) menjadi
+ * string RFC3339 UTC. Backend memparsing item_date dengan layout RFC3339
+ * ("2006-01-02T15:04:05Z07:00"); mengirim "2026-09-19" tanpa "T" membuat
+ * parsernya gagal. Fallback = waktu sekarang.
+ */
+const toRfc3339 = (value) => {
+  if (!value) return new Date().toISOString();
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return new Date().toISOString();
+  return d.toISOString();
+};
+
 export async function createReport(reportData) {
   const payload = {
     user_id: reportData.user_id || reportData.userId || 1,
@@ -152,7 +165,7 @@ export async function createReport(reportData) {
     photo_url: reportData.photo_url || reportData.photoUrl || '',
     status: reportData.status || 'pending',
     activity_note: reportData.activity_note || reportData.activityNote || '',
-    item_date: reportData.item_date || reportData.itemDate || new Date().toISOString().split('T')[0],
+    item_date: toRfc3339(reportData.item_date || reportData.itemDate),
   };
   const data = await apiClient.post('/reports', payload);
   return data?.data || data;
@@ -355,7 +368,7 @@ export function mapLocalToApiReport(localItem, type = 'found') {
     photo_url: localItem.photoUrl || '',
     status: 'pending',
     activity_note: localItem.activityNote || '',
-    item_date: new Date().toISOString().split('T')[0],
+    item_date: toRfc3339(localItem.itemDate || localItem.createdAt || localItem.foundAt),
   };
 }
 

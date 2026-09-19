@@ -229,6 +229,12 @@ export function ReportLostForm({
         photo_url: showPhoto ? photoUrls.filter(Boolean).join(',') : '',
       });
       if (result?.status === 'success') {
+        if (result?.offline) {
+          setErrorBanner({
+            type: 'report',
+            message: result.message || 'Mode offline — laporan disimpan di perangkat ini, belum masuk server.',
+          });
+        }
         resetForm();
         if (onSuccess) onSuccess(result);
         return;
